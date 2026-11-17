@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FB Following Audit &amp; Swipe Reviewer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overscroll-behavior-y: contain;
+    }
+    .card-stack-item {
+      touch-action: none;
+      user-select: none;
+      will-change: transform, opacity;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+    }
+    .card-stack-item.dragging {
+      transition: none;
+    }
+    .stamp-badge {
+      transition: opacity 0.1s linear;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  <!-- Top Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">FB Following Swipe Audit</h1>
+          <p id="dataSourceBadge" class="text-xs text-amber-400 font-medium">Sample Preview Mode &middot; Import your Facebook JSON to audit real accounts</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnOpenImport" type="button" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Import FB Data
+        </button>
+        <button id="btnResetDemo" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium border border-slate-700 transition">
+          Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- Left / Center: Filters + Swipe Deck -->
+    <section class="lg:col-span-7 flex flex-col items-center">
+      <!-- Stats & Filter Bar -->
+      <div class="w-full max-w-md mb-4 space-y-3">
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3">
+            <div id="statRemaining" class="text-lg font-bold text-white">0</div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-medium">To Review</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3">
+            <div id="statUnfollow" class="text-lg font-bold text-rose-400">0</div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Unfollow Queue</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3">
+            <div id="statKept" class="text-lg font-bold text-emerald-400">0</div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Kept</div>
+          </div>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Account filters">
+          <button type="button" data-filter="all" class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-blue-600 text-white">All</button>
+          <button type="button" data-filter="non-mutual" class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Non-Mutual</button>
+          <button type="button" data-filter="inactive" class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Inactive / Old</button>
+          <button type="button" data-filter="pages" class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Pages &amp; Creators</button>
+        </div>
+      </div>
+
+      <!-- Card Stack Container -->
+      <div id="deckStage" class="relative w-full max-w-md h-[420px] sm:h-[440px] flex items-center justify-center">
+        <!-- Cards rendered dynamically -->
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="w-full max-w-md mt-5 flex items-center justify-center gap-4">
+        <button id="btnUndo" type="button" title="Undo last swipe (Z)" class="w-12 h-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 flex items-center justify-center transition disabled:opacity-35 disabled:cursor-not-allowed shadow-md">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+        </button>
+
+        <button id="btnUnfollow" type="button" title="Swipe Left: Queue Unfollow (Left Arrow)" class="w-16 h-16 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border-2 border-rose-500 text-rose-400 flex items-center justify-center transition active:scale-95 shadow-lg shadow-rose-500/10">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <button id="btnKeep" type="button" title="Swipe Right: Keep Following (Right Arrow)" class="w-16 h-16 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center transition active:scale-95 shadow-lg shadow-emerald-500/10">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      </div>
+
+      <p class="mt-3 text-xs text-slate-500 text-center">
+        Drag card or use keys: <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">&larr;</kbd> Unfollow &middot;
+        <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">&rarr;</kbd> Keep &middot;
+        <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">Z</kbd> Undo
+      </p>
+    </section>
+
+    <!-- Right: Unfollow Queue & Export -->
+    <aside class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col max-h-[580px]">
+      <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-800">
+        <div>
+          <h2 class="text-sm font-bold text-white">Unfollow Queue</h2>
+          <p class="text-xs text-slate-400">Open profiles to unfollow or export list</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="btnExportCsv" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
+            Export CSV
+          </button>
+          <button id="btnCopyQueue" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
+            Copy List
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue Tabs -->
+      <div class="flex gap-2 mt-3 mb-2">
+        <button id="tabQueueUnfollow" type="button" class="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 transition">
+          To Unfollow (<span id="countTabUnfollow">0</span>)
+        </button>
+        <button id="tabQueueKept" type="button" class="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition">
+          Kept (<span id="countTabKept">0</span>)
+        </button>
+      </div>
+
+      <div id="queueList" class="flex-1 overflow-y-auto space-y-2 pr-1 mt-1 min-h-[220px]">
+        <!-- Queue items rendered dynamically -->
+      </div>
+    </aside>
+  </main>
+
+  <!-- Import Modal -->
+  <div id="importModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-white">Import Your Facebook Following Data</h3>
+          <p class="text-xs text-slate-400 mt-0.5">100% local in your browser &mdash; nothing is uploaded to any server.</p>
+        </div>
+        <button id="btnCloseImport" type="button" class="text-slate-400 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1.5">
+        <p class="font-semibold text-blue-400">How to export from Facebook (bypasses CAPTCHA scraping):</p>
+        <ol class="list-decimal list-inside space-y-1 text-slate-400">
+          <li>Open Facebook &rarr; <strong>Settings &amp; privacy</strong> &rarr; <strong>Accounts Center</strong> &rarr; <strong>Your information and permissions</strong>.</li>
+          <li>Select <strong>Download your information</strong> &rarr; <strong>Some of your information</strong> &rarr; check <strong>Followers and following</strong> (and optionally <strong>Friends</strong>).</li>
+          <li>Choose format <strong>JSON</strong>, download, and select the <code>.json</code> files below (e.g. <code>following.json</code>, <code>followers.json</code>, <code>friends.json</code>).</li>
+        </ol>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block">
+          <span class="text-xs font-semibold text-slate-300 block mb-1.5">Select Facebook JSON file(s)</span>
+          <input id="fileInputJson" type="file" accept=".json,application/json" multiple class="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer bg-slate-950 border border-slate-800 rounded-lg" />
+        </label>
+
+        <div>
+          <label for="pasteJsonInput" class="text-xs font-semibold text-slate-300 block mb-1">Or paste JSON / CSV list (Name, URL, Type)</label>
+          <textarea id="pasteJsonInput" rows="4" placeholder='[{"name": "Example Page", "url": "https://www.facebook.com/example", "mutual": false, "inactive": true}]' class="w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <button id="btnCancelImport" type="button" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Cancel</button>
+        <button id="btnApplyPaste" type="button" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white">Load Pasted Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-white shadow-xl opacity-0 pointer-events-none transition-opacity duration-200"></div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'fb_swipe_audit_state_v1';
+
+      const SAMPLE_ACCOUNTS = [
+        {
+          id: 'sample-1',
+          name: 'Alex Rivera',
+          url: 'https://www.facebook.com/',
+          type: 'Person',
+          mutual: false,
+          inactive: true,
+          followedSince: '2019-04-12',
+          lastActive: 'No posts in 18+ months',
+          reason: 'Non-mutual follow & inactive profile'
+        },
+        {
+          id: 'sample-2',
+          name: 'Daily Tech Memes Hub',
+          url: 'https://www.facebook.com/',
+          type: 'Page',
+          mutual: false,
+          inactive: true,
+          followedSince: '2020-08-03',
+          lastActive: 'Last post: Nov 2023',
+          reason: 'Dormant page'
+        },
+        {
+          id: 'sample-3',
+          name: 'Jordan Kim',
+          url: 'https://www.facebook.com/',
+          type: 'Person',
+          mutual: false,
+          inactive: false,
+          followedSince: '2022-01-19',
+          lastActive: 'Active recently',
+          reason: 'Does not follow back'
+        },
+        {
+          id: 'sample-4',
+          name: 'NoVA Weekend Events',
+          url: 'https://www.facebook.com/',
+          type: 'Creator',
+          mutual: false,
+          inactive: true,
+          followedSince: '2021-06-15',
+          lastActive: 'Last post: Feb 2024',
+          reason: 'Inactive creator page'
+        },
+        {
+          id: 'sample-5',
+          name: 'Samira Patel',
+          url: 'https://www.facebook.com/',
+          type: 'Person',
+          mutual: true,
+          inactive: true,
+          followedSince: '2018-11-02',
+          lastActive: 'Account appears deactivated',
+          reason: 'Inactive / deactivated'
+        },
+        {
+          id: 'sample-6',
+          name: 'Retro Console Deals',
+          url: 'https://www.facebook.com/',
+          type: 'Page',
+          mutual: false,
+          inactive: false,
+          followedSince: '2023-03-28',
+          lastActive: 'Active weekly',
+          reason: 'Page (one-way follow)'
+        }
+      ];
+
+      let state = {
+        isSample: true,
+        accounts: [...SAMPLE_ACCOUNTS],
+        decisions: {}, // id -> 'unfollow' | 'keep'
+        history: [],   // [{ id, decision }]
+        filter: 'all',
+        queueTab: 'unfollow'
+      };
+
+      const els = {
+        dataSourceBadge: document.getElementById('dataSourceBadge'),
+        statRemaining: document.getElementById('statRemaining'),
+        statUnfollow: document.getElementById('statUnfollow'),
+        statKept: document.getElementById('statKept'),
+        deckStage: document.getElementById('deckStage'),
+        queueList: document.getElementById('queueList'),
+        countTabUnfollow: document.getElementById('countTabUnfollow'),
+        countTabKept: document.getElementById('countTabKept'),
+        tabQueueUnfollow: document.getElementById('tabQueueUnfollow'),
+        tabQueueKept: document.getElementById('tabQueueKept'),
+        btnUndo: document.getElementById('btnUndo'),
+        btnUnfollow: document.getElementById('btnUnfollow'),
+        btnKeep: document.getElementById('btnKeep'),
+        btnResetDemo: document.getElementById('btnResetDemo'),
+        btnOpenImport: document.getElementById('btnOpenImport'),
+        btnCloseImport: document.getElementById('btnCloseImport'),
+        btnCancelImport: document.getElementById('btnCancelImport'),
+        btnApplyPaste: document.getElementById('btnApplyPaste'),
+        btnExportCsv: document.getElementById('btnExportCsv'),
+        btnCopyQueue: document.getElementById('btnCopyQueue'),
+        importModal: document.getElementById('importModal'),
+        fileInputJson: document.getElementById('fileInputJson'),
+        pasteJsonInput: document.getElementById('pasteJsonInput'),
+        toast: document.getElementById('toast'),
+        filterPills: Array.from(document.querySelectorAll('.filter-pill'))
+      };
+
+      let toastTimer = null;
+      function showToast(msg) {
+        els.toast.textContent = msg;
+        els.toast.classList.remove('opacity-0');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          els.toast.classList.add('opacity-0');
+        }, 2400);
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          // Ignore storage errors in restricted frames
+        }
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+              state = {
+                isSample: Boolean(parsed.isSample),
+                accounts: parsed.accounts,
+                decisions: parsed.decisions || {},
+                history: Array.isArray(parsed.history) ? parsed.history : [],
+                filter: parsed.filter || 'all',
+                queueTab: parsed.queueTab || 'unfollow'
+              };
+            }
+          }
+        } catch (e) {
+          // Ignore storage errors
+        }
+      }
+
+      function matchesFilter(acc) {
+        if (state.filter === 'non-mutual') return !acc.mutual;
+        if (state.filter === 'inactive') return acc.inactive;
+        if (state.filter === 'pages') return acc.type === 'Page' || acc.type === 'Creator';
+        return true;
+      }
+
+      function getPendingAccounts() {
+        return state.accounts.filter((acc) => !state.decisions[acc.id] && matchesFilter(acc));
+      }
+
+      function getInitials(name) {
+        const parts = String(name || '?').trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+
+      function getAvatarGradient(name) {
+        const gradients = [
+          'from-blue-500 to-indigo-600',
+          'from-rose-500 to-orange-500',
+          'from-emerald-500 to-teal-600',
+          'from-violet-500 to-purple-600',
+          'from-amber-500 to-pink-500',
+          'from-cyan-500 to-blue-600'
+        ];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return gradients[Math.abs(hash) % gradients.length];
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function renderDeck() {
+        const pending = getPendingAccounts();
+        els.deckStage.innerHTML = '';
+
+        if (pending.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'w-full h-full rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-center';
+          empty.innerHTML = `
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-3">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-white">All caught up!</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs">No more accounts match this filter. Switch filters, undo a swipe, or export your Unfollow Queue.</p>
+          `;
+          els.deckStage.appendChild(empty);
+          return;
+        }
+
+        const visible = pending.slice(0, 3).reverse();
+        visible.forEach((acc, idx) => {
+          const isTop = idx === visible.length - 1;
+          const depth = visible.length - 1 - idx;
+          const card = document.createElement('div');
+          card.className = 'card-stack-item absolute inset-0 rounded-3xl bg-slate-900 border border-slate-700/90 shadow-2xl p-5 flex flex-col justify-between overflow-hidden';
+          card.style.transform = `translateY(${depth * 10}px) scale(${1 - depth * 0.04})`;
+          card.style.zIndex = String(10 + idx);
+          if (!isTop) card.style.pointerEvents = 'none';
+
+          const mutualBadge = acc.mutual
+            ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Mutual</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">Non-Mutual</span>';
+
+          const activityBadge = acc.inactive
+            ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">Inactive / Old</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">Active</span>';
+
+          card.innerHTML = `
+            <div class="stamp-unfollow stamp-badge pointer-events-none opacity-0 absolute top-6 right-6 border-4 border-rose-500 text-rose-400 font-extrabold text-xl px-3 py-1 rounded-xl rotate-12 tracking-wider">UNFOLLOW</div>
+            <div class="stamp-keep stamp-badge pointer-events-none opacity-0 absolute top-6 left-6 border-4 border-emerald-500 text-emerald-400 font-extrabold text-xl px-3 py-1 rounded-xl -rotate-12 tracking-wider">KEEP</div>
+
+            <div class="flex flex-col items-center text-center mt-2">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarGradient(acc.name)} flex items-center justify-center text-2xl font-extrabold text-white shadow-lg mb-3">
+                ${escapeHtml(getInitials(acc.name))}
+              </div>
+              <h3 class="text-xl font-bold text-white leading-snug">${escapeHtml(acc.name)}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(acc.type || 'Account')}</p>
+              <div class="flex flex-wrap items-center justify-center gap-1.5 mt-3">
+                ${mutualBadge}
+                ${activityBadge}
+              </div>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs">
+              <div class="flex items-center justify-between text-slate-400">
+                <span>Followed since</span>
+                <span class="text-slate-200 font-medium">${escapeHtml(acc.followedSince || 'Unknown')}</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-400">
+                <span>Activity</span>
+                <span class="text-slate-200 font-medium">${escapeHtml(acc.lastActive || 'Unknown')}</span>
+              </div>
+              <div class="pt-1.5 border-t border-slate-800/80 text-slate-300">
+                <span class="text-slate-500">Audit note:</span> ${escapeHtml(acc.reason || 'Review following status')}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-1">
+              <a href="${escapeHtml(acc.url || 'https://www.facebook.com/')}" target="_blank" rel="noopener noreferrer" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-blue-300 text-center transition">
+                Open Facebook Profile &nearr;
+              </a>
+            </div>
+          `;
+
+          if (isTop) attachDragHandlers(card, acc.id);
+          els.deckStage.appendChild(card);
+        });
+      }
+
+      function attachDragHandlers(card, accountId) {
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        const stampUnfollow = card.querySelector('.stamp-unfollow');
+        const stampKeep = card.querySelector('.stamp-keep');
+
+        const onPointerDown = (e) => {
+          if (e.target.closest('a, button')) return;
+          isDragging = true;
+          startX = e.clientX;
+          currentX = 0;
+          card.classList.add('dragging');
+          card.setPointerCapture(e.pointerId);
+        };
+
+        const onPointerMove = (e) => {
+          if (!isDragging) return;
+          currentX = e.clientX - startX;
+          const rotate = currentX * 0.06;
+          card.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+          const ratio = Math.min(Math.abs(currentX) / 100, 1);
+          if (currentX < 0) {
+            stampUnfollow.style.opacity = String(ratio);
+            stampKeep.style.opacity = '0';
+          } else {
+            stampKeep.style.opacity = String(ratio);
+            stampUnfollow.style.opacity = '0';
+          }
+        };
+
+        const onPointerUp = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          card.classList.remove('dragging');
+          if (currentX < -95) {
+            commitSwipe(accountId, 'unfollow', card);
+          } else if (currentX > 95) {
+            commitSwipe(accountId, 'keep', card);
+          } else {
+            card.style.transform = 'translateY(0) scale(1)';
+            stampUnfollow.style.opacity = '0';
+            stampKeep.style.opacity = '0';
+          }
+        };
+
+        card.addEventListener('pointerdown', onPointerDown);
+        card.addEventListener('pointermove', onPointerMove);
+        card.addEventListener('pointerup', onPointerUp);
+        card.addEventListener('pointercancel', onPointerUp);
+      }
+
+      function commitSwipe(accountId, decision, cardEl) {
+        const targetCard = cardEl || els.deckStage.querySelector('.card-stack-item:last-child');
+        if (targetCard) {
+          const dir = decision === 'unfollow' ? -1 : 1;
+          targetCard.style.transform = `translateX(${dir * 420}px) rotate(${dir * 22}deg)`;
+          targetCard.style.opacity = '0';
+        }
+        state.decisions[accountId] = decision;
+        state.history.push({ id: accountId, decision });
+        saveState();
+        setTimeout(() => {
+          renderAll();
+        }, 170);
+      }
+
+      function undoLastSwipe() {
+        if (state.history.length === 0) return;
+        const last = state.history.pop();
+        delete state.decisions[last.id];
+        saveState();
+        renderAll();
+        showToast('Undid last swipe');
+      }
+
+      function renderQueue() {
+        const unfollowItems = state.accounts.filter((a) => state.decisions[a.id] === 'unfollow');
+        const keptItems = state.accounts.filter((a) => state.decisions[a.id] === 'keep');
+
+        els.countTabUnfollow.textContent = String(unfollowItems.length);
+        els.countTabKept.textContent = String(keptItems.length);
+
+        const activeItems = state.queueTab === 'unfollow' ? unfollowItems : keptItems;
+        els.queueList.innerHTML = '';
+
+        if (activeItems.length === 0) {
+          els.queueList.innerHTML = `
+            <div class="py-10 text-center text-xs text-slate-500">
+              ${state.queueTab === 'unfollow' ? 'Swipe left on accounts to queue them for unfollowing.' : 'Swipe right on accounts you want to keep.'}
+            </div>
+          `;
+          return;
+        }
+
+        activeItems.forEach((acc) => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800';
+          row.innerHTML = `
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-white truncate">${escapeHtml(acc.name)}</div>
+              <div class="text-[11px] text-slate-400 truncate">${escapeHtml(acc.type)} &middot; ${acc.mutual ? 'Mutual' : 'Non-mutual'}</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <a href="${escapeHtml(acc.url || 'https://www.facebook.com/')}" target="_blank" rel="noopener noreferrer" class="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-[11px] font-semibold transition">
+                Open
+              </a>
+              <button type="button" data-restore="${escapeHtml(acc.id)}" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition">
+                Undo
+              </button>
+            </div>
+          `;
+          row.querySelector('[data-restore]').addEventListener('click', () => {
+            delete state.decisions[acc.id];
+            state.history = state.history.filter((h) => h.id !== acc.id);
+            saveState();
+            renderAll();
+          });
+          els.queueList.appendChild(row);
+        });
+      }
+
+      function renderStatsAndControls() {
+        const pending = getPendingAccounts();
+        const unfollowCount = state.accounts.filter((a) => state.decisions[a.id] === 'unfollow').length;
+        const keptCount = state.accounts.filter((a) => state.decisions[a.id] === 'keep').length;
+
+        els.statRemaining.textContent = String(pending.length);
+        els.statUnfollow.textContent = String(unfollowCount);
+        els.statKept.textContent = String(keptCount);
+        els.btnUndo.disabled = state.history.length === 0;
+
+        els.dataSourceBadge.textContent = state.isSample
+          ? 'Sample Preview Mode · Import your Facebook JSON to audit real accounts'
+          : `Live Imported Dataset · ${state.accounts.length} accounts loaded`;
+        els.dataSourceBadge.className = state.isSample
+          ? 'text-xs text-amber-400 font-medium'
+          : 'text-xs text-emerald-400 font-medium';
+
+        els.filterPills.forEach((pill) => {
+          const active = pill.dataset.filter === state.filter;
+          pill.className = active
+            ? 'filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-blue-600 text-white'
+            : 'filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        });
+
+        if (state.queueTab === 'unfollow') {
+          els.tabQueueUnfollow.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 transition';
+          els.tabQueueKept.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition';
+        } else {
+          els.tabQueueUnfollow.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition';
+          els.tabQueueKept.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition';
+        }
+      }
+
+      function renderAll() {
+        renderStatsAndControls();
+        renderDeck();
+        renderQueue();
+      }
+
+      // Parse Facebook DYI JSON formats (following, followers, friends) or generic arrays
+      function extractFacebookEntries(jsonObj) {
+        const list = [];
+        const candidates = [
+          jsonObj.following_v2,
+          jsonObj.following,
+          jsonObj.followers_v2,
+          jsonObj.followers,
+          jsonObj.friends_v2,
+          jsonObj.friends,
+          Array.isArray(jsonObj) ? jsonObj : null
+        ].filter(Boolean);
+
+        candidates.forEach((arr) => {
+          if (!Array.isArray(arr)) return;
+          arr.forEach((item) => {
+            if (item.name) {
+              list.push({
+                name: item.name,
+                url: item.url || item.href || 'https://www.facebook.com/',
+                timestamp: item.timestamp || null,
+                mutual: typeof item.mutual === 'boolean' ? item.mutual : undefined,
+                inactive: typeof item.inactive === 'boolean' ? item.inactive : undefined,
+                type: item.type || 'Account'
+              });
+            } else if (Array.isArray(item.string_list_data)) {
+              item.string_list_data.forEach((s) => {
+                if (s.value || s.href) {
+                  list.push({
+                    name: s.value || item.title || 'Facebook Account',
+                    url: s.href || 'https://www.facebook.com/',
+                    timestamp: s.timestamp || item.timestamp || null,
+                    type: 'Account'
+                  });
+                }
+              });
+            }
+          });
+        });
+        return list;
+      }
+
+      async function handleJsonFiles(files) {
+        const followingEntries = [];
+        const mutualNames = new Set();
+
+        for (const file of files) {
+          const text = await file.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (e) {
+            showToast(`Could not parse ${file.name}`);
+            return;
+          }
+          const lower = file.name.toLowerCase();
+          const entries = extractFacebookEntries(parsed);
+          if (lower.includes('follower') || lower.includes('friend')) {
+            entries.forEach((e) => mutualNames.add(e.name.toLowerCase()));
+          } else {
+            followingEntries.push(...entries);
+          }
+        }
+
+        if (followingEntries.length === 0) {
+          showToast('No following entries found in selected JSON');
+          return;
+        }
+
+        const nowSec = Math.floor(Date.now() / 1000);
+        const mapped = followingEntries.map((entry, idx) => {
+          const isMutual = typeof entry.mutual === 'boolean'
+            ? entry.mutual
+            : mutualNames.size > 0 && mutualNames.has(entry.name.toLowerCase());
+          const ageYears = entry.timestamp ? (nowSec - entry.timestamp) / (365 * 86400) : 0;
+          const isOld = typeof entry.inactive === 'boolean' ? entry.inactive : ageYears > 2;
+          const dateStr = entry.timestamp
+            ? new Date(entry.timestamp * 1000).toISOString().slice(0, 10)
+            : 'Unknown';
+
+          return {
+            id: `fb-${idx}-${entry.name.slice(0, 12)}`,
+            name: entry.name,
+            url: entry.url,
+            type: entry.type || 'Account',
+            mutual: isMutual,
+            inactive: isOld,
+            followedSince: dateStr,
+            lastActive: isOld ? 'Followed 2+ years ago' : 'Recent follow',
+            reason: !isMutual && isOld
+              ? 'Non-mutual & old follow'
+              : !isMutual
+                ? 'Not in followers/friends list'
+                : isOld
+                  ? 'Followed 2+ years ago'
+                  : 'Mutual follow'
+          };
+        });
+
+        state.isSample = false;
+        state.accounts = mapped;
+        state.decisions = {};
+        state.history = [];
+        saveState();
+        renderAll();
+        closeModal();
+        showToast(`Loaded ${mapped.length} accounts from Facebook export`);
+      }
+
+      function handlePastedData() {
+        const raw = els.pasteJsonInput.value.trim();
+        if (!raw) {
+          showToast('Paste JSON or CSV lines first');
+          return;
+        }
+        let parsedAccounts = [];
+        try {
+          const json = JSON.parse(raw);
+          const entries = extractFacebookEntries(json);
+          parsedAccounts = entries.map((e, idx) => ({
+            id: `paste-${idx}`,
+            name: e.name,
+            url: e.url || 'https://www.facebook.com/',
+            type: e.type || 'Account',
+            mutual: Boolean(e.mutual),
+            inactive: Boolean(e.inactive),
+            followedSince: 'Imported',
+            lastActive: e.inactive ? 'Marked inactive' : 'Unknown',
+            reason: e.mutual ? 'Imported account' : 'Non-mutual'
+          }));
+        } catch (err) {
+          // Fallback CSV/line parser: Name, URL, Type
+          const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          parsedAccounts = lines.map((line, idx) => {
+            const parts = line.split(',').map((p) => p.trim());
+            return {
+              id: `csv-${idx}`,
+              name: parts[0] || `Account ${idx + 1}`,
+              url: parts[1] && parts[1].startsWith('http') ? parts[1] : 'https://www.facebook.com/',
+              type: parts[2] || 'Account',
+              mutual: false,
+              inactive: false,
+              followedSince: 'Imported',
+              lastActive: 'Unknown',
+              reason: 'Imported from list'
+            };
+          });
+        }
+
+        if (parsedAccounts.length === 0) {
+          showToast('No valid accounts parsed');
+          return;
+        }
+
+        state.isSample = false;
+        state.accounts = parsedAccounts;
+        state.decisions = {};
+        state.history = [];
+        saveState();
+        renderAll();
+        closeModal();
+        showToast(`Loaded ${parsedAccounts.length} accounts`);
+      }
+
+      function openModal() {
+        els.importModal.classList.remove('hidden');
+      }
+      function closeModal() {
+        els.importModal.classList.add('hidden');
+      }
+
+      // Event Listeners
+      els.btnUnfollow.addEventListener('click', () => {
+        const pending = getPendingAccounts();
+        if (pending.length > 0) commitSwipe(pending[0].id, 'unfollow');
+      });
+
+      els.btnKeep.addEventListener('click', () => {
+        const pending = getPendingAccounts();
+        if (pending.length > 0) commitSwipe(pending[0].id, 'keep');
+      });
+
+      els.btnUndo.addEventListener('click', undoLastSwipe);
+
+      els.btnResetDemo.addEventListener('click', () => {
+        state = {
+          isSample: true,
+          accounts: [...SAMPLE_ACCOUNTS],
+          decisions: {},
+          history: [],
+          filter: 'all',
+          queueTab: 'unfollow'
+        };
+        saveState();
+        renderAll();
+        showToast('Reset to sample preview');
+      });
+
+      els.filterPills.forEach((pill) => {
+        pill.addEventListener('click', () => {
+          state.filter = pill.dataset.filter;
+          saveState();
+          renderAll();
+        });
+      });
+
+      els.tabQueueUnfollow.addEventListener('click', () => {
+        state.queueTab = 'unfollow';
+        renderAll();
+      });
+
+      els.tabQueueKept.addEventListener('click', () => {
+        state.queueTab = 'kept';
+        renderAll();
+      });
+
+      els.btnOpenImport.addEventListener('click', openModal);
+      els.btnCloseImport.addEventListener('click', closeModal);
+      els.btnCancelImport.addEventListener('click', closeModal);
+      els.btnApplyPaste.addEventListener('click', handlePastedData);
+
+      els.fileInputJson.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          handleJsonFiles(Array.from(e.target.files));
+        }
+      });
+
+      els.btnExportCsv.addEventListener('click', () => {
+        const unfollowItems = state.accounts.filter((a) => state.decisions[a.id] === 'unfollow');
+        if (unfollowItems.length === 0) {
+          showToast('Unfollow queue is empty');
+          return;
+        }
+        const rows = [['Name', 'Profile URL', 'Type', 'Mutual', 'Inactive', 'Reason']];
+        unfollowItems.forEach((a) => {
+          rows.push([a.name, a.url, a.type, String(a.mutual), String(a.inactive), a.reason]);
+        });
+        const csv = rows.map((r) => r.map((c) => `"${String(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'facebook_unfollow_queue.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Exported unfollow queue CSV');
+      });
+
+      els.btnCopyQueue.addEventListener('click', async () => {
+        const unfollowItems = state.accounts.filter((a) => state.decisions[a.id] === 'unfollow');
+        if (unfollowItems.length === 0) {
+          showToast('Unfollow queue is empty');
+          return;
+        }
+        const text = unfollowItems.map((a) => `${a.name} — ${a.url}`).join('\n');
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('Copied unfollow queue');
+        } catch (e) {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          showToast('Copied unfollow queue');
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!els.importModal.classList.contains('hidden')) {
+          if (e.key === 'Escape') closeModal();
+          return;
+        }
+        if (e.key === 'ArrowLeft') {
+          const pending = getPendingAccounts();
+          if (pending.length > 0) commitSwipe(pending[0].id, 'unfollow');
+        } else if (e.key === 'ArrowRight') {
+          const pending = getPendingAccounts();
+          if (pending.length > 0) commitSwipe(pending[0].id, 'keep');
+        } else if (e.key === 'z' || e.key === 'Z') {
+          undoLastSwipe();
+        }
+      });
+
+      loadState();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>

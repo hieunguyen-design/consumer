@@ -1,0 +1,15 @@
+{
+  "name": "consumer-api",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.4.0"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

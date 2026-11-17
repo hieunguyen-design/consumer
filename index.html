@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FB Following Audit — Live Graph API</title>
+    <title>FB Following Audit & Swipe Reviewer</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
@@ -28,23 +28,17 @@
       .stamp-badge {
         transition: opacity 0.1s linear;
       }
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translate(-50%, 16px);
-        }
-        to {
-          opacity: 1;
-          transform: translate(-50%, 0);
-        }
+      .spin {
+        animation: sp 1s linear infinite;
       }
-      .banner-in {
-        animation: slideIn 0.3s ease-out both;
+      @keyframes sp {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-    <!-- ───────────────────────── HEADER ───────────────────────── -->
     <header
       class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-30"
     >
@@ -73,87 +67,51 @@
             <h1
               class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight"
             >
-              FB Following Audit
+              FB Following Swipe Audit
             </h1>
             <p id="dataSourceBadge" class="text-xs text-slate-400 font-medium">
-              Not connected · No data loaded
+              Not connected
             </p>
           </div>
         </div>
-
         <div class="flex items-center gap-2">
           <div
-            id="profileChip"
-            class="hidden items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-slate-800 border border-slate-700"
+            id="userChip"
+            class="hidden items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-slate-800 border border-slate-700"
           >
             <img
-              id="profileChipAvatar"
+              id="userAvatar"
               alt=""
-              class="w-7 h-7 rounded-full object-cover bg-slate-700"
-              referrerpolicy="no-referrer"
+              class="w-6 h-6 rounded-full object-cover"
             />
             <span
-              id="profileChipName"
-              class="text-xs font-semibold text-slate-100 max-w-[140px] truncate"
+              id="userName"
+              class="text-xs font-semibold text-slate-100"
             ></span>
           </div>
           <button
             id="btnConnect"
             type="button"
-            class="px-3 py-1.5 rounded-lg bg-[#1877F2] hover:bg-[#166fe0] text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm"
+            class="px-3 py-1.5 rounded-lg bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path
-                d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"
+                d="M22 12a10 10 0 10-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0022 12z"
               />
             </svg>
             <span id="btnConnectLabel">Connect Facebook</span>
           </button>
           <button
-            id="btnSync"
+            id="btnRefresh"
             type="button"
-            title="Re-fetch from Graph API"
-            class="hidden px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium border border-slate-700 transition"
+            class="hidden px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition"
           >
-            Sync
+            Refresh
           </button>
           <button
-            id="btnStatus"
+            id="btnLogout"
             type="button"
-            title="Connection diagnostics"
-            class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
-          >
-            Status
-          </button>
-          <button
-            id="btnSettings"
-            type="button"
-            title="App settings"
-            class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </button>
-          <button
-            id="btnDisconnect"
-            type="button"
-            class="hidden px-3 py-1.5 rounded-lg bg-rose-600/15 hover:bg-rose-600/25 text-rose-300 text-xs font-medium border border-rose-600/30 transition"
+            class="hidden px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
           >
             Disconnect
           </button>
@@ -161,11 +119,77 @@
       </div>
     </header>
 
-    <!-- ───────────────────────── MAIN ───────────────────────── -->
+    <!-- Permission / scope status strip -->
+    <div
+      id="scopeStrip"
+      class="hidden border-b border-slate-800 bg-slate-900/50"
+    >
+      <div
+        class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center gap-2 text-[11px]"
+        id="scopeChips"
+      ></div>
+    </div>
+
     <main
       class="flex-1 max-w-6xl w-full mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
     >
-      <section class="lg:col-span-7 flex flex-col items-center">
+      <!-- ===== Connect gate ===== -->
+      <section id="connectGate" class="lg:col-span-12">
+        <div
+          class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-7 text-center"
+        >
+          <div
+            class="w-14 h-14 mx-auto rounded-2xl bg-[#1877F2]/15 text-[#1877F2] flex items-center justify-center mb-4"
+          >
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M22 12a10 10 0 10-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0022 12z"
+              />
+            </svg>
+          </div>
+          <h2 class="text-xl font-bold text-white">
+            Connect your Facebook account
+          </h2>
+          <p class="text-sm text-slate-400 mt-2">
+            We load your friends, followed Pages and managed Pages directly from
+            the Graph API. Nothing is stored on our servers beyond your session.
+          </p>
+          <ul
+            class="text-left text-xs text-slate-400 mt-5 space-y-2 bg-slate-950 border border-slate-800 rounded-xl p-4"
+          >
+            <li>
+              • <strong class="text-slate-200">public_profile</strong> — your
+              name & avatar
+            </li>
+            <li>
+              • <strong class="text-slate-200">user_friends</strong> — friends
+              who also use this app (Facebook limits this)
+            </li>
+            <li>
+              • <strong class="text-slate-200">user_likes</strong> — Pages you
+              follow <em>(requires App Review)</em>
+            </li>
+            <li>
+              • <strong class="text-slate-200">pages_show_list</strong> — Pages
+              you manage
+            </li>
+          </ul>
+          <button
+            id="btnConnectBig"
+            type="button"
+            class="mt-5 w-full py-3 rounded-xl bg-[#1877F2] hover:bg-[#166FE5] text-white text-sm font-bold transition"
+          >
+            Continue with Facebook
+          </button>
+          <p id="gateError" class="hidden mt-3 text-xs text-rose-400"></p>
+        </div>
+      </section>
+
+      <!-- ===== Deck ===== -->
+      <section
+        id="deckSection"
+        class="hidden lg:col-span-7 flex-col items-center"
+      >
         <div class="w-full max-w-md mb-4 space-y-3">
           <div class="grid grid-cols-3 gap-2 text-center">
             <div
@@ -189,7 +213,7 @@
               <div
                 class="text-[11px] uppercase tracking-wider text-slate-400 font-medium"
               >
-                Unfollow
+                Remove Queue
               </div>
             </div>
             <div
@@ -229,28 +253,21 @@
               data-filter="pages"
               class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700"
             >
-              Pages
+              Pages Followed
             </button>
             <button
               type="button"
-              data-filter="non-mutual"
+              data-filter="managed"
               class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700"
             >
-              Non-Mutual
-            </button>
-            <button
-              type="button"
-              data-filter="stale"
-              class="filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700"
-            >
-              2+ yrs old
+              Managed
             </button>
           </div>
         </div>
 
         <div
           id="deckStage"
-          class="relative w-full max-w-md h-[440px] sm:h-[460px] flex items-center justify-center"
+          class="relative w-full max-w-md h-[430px] sm:h-[450px] flex items-center justify-center"
         ></div>
 
         <div
@@ -259,7 +276,7 @@
           <button
             id="btnUndo"
             type="button"
-            title="Undo last swipe (Z)"
+            title="Undo (Z)"
             class="w-12 h-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 flex items-center justify-center transition disabled:opacity-35 disabled:cursor-not-allowed shadow-md"
           >
             <svg
@@ -279,7 +296,7 @@
           <button
             id="btnUnfollow"
             type="button"
-            title="Queue Unfollow (←)"
+            title="Queue removal (←)"
             class="w-16 h-16 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border-2 border-rose-500 text-rose-400 flex items-center justify-center transition active:scale-95 shadow-lg shadow-rose-500/10"
           >
             <svg
@@ -299,7 +316,7 @@
           <button
             id="btnKeep"
             type="button"
-            title="Keep Following (→)"
+            title="Keep (→)"
             class="w-16 h-16 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center transition active:scale-95 shadow-lg shadow-emerald-500/10"
           >
             <svg
@@ -317,63 +334,78 @@
             </svg>
           </button>
         </div>
-
         <p class="mt-3 text-xs text-slate-500 text-center">
-          Drag card or press
+          Drag or press
           <kbd
             class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700"
-            >&larr;</kbd
+            >←</kbd
           >
-          Unfollow ·
+          remove ·
           <kbd
             class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700"
-            >&rarr;</kbd
+            >→</kbd
           >
-          Keep ·
+          keep ·
           <kbd
             class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700"
             >Z</kbd
           >
-          Undo
+          undo
         </p>
       </section>
 
+      <!-- ===== Queue ===== -->
       <aside
-        class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col max-h-[620px]"
+        id="queueSection"
+        class="hidden lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-col max-h-[640px]"
       >
         <div
           class="flex items-center justify-between gap-2 pb-3 border-b border-slate-800"
         >
           <div>
-            <h2 class="text-sm font-bold text-white">Unfollow Queue</h2>
+            <h2 class="text-sm font-bold text-white">Removal Queue</h2>
             <p class="text-xs text-slate-400">
-              Graph API has no unfollow endpoint — open &amp; action manually
+              Executed through the app action API
             </p>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              id="btnExportCsv"
-              type="button"
-              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition"
-            >
-              CSV
-            </button>
-            <button
-              id="btnCopyQueue"
-              type="button"
-              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition"
-            >
-              Copy
-            </button>
-          </div>
+          <button
+            id="btnExportCsv"
+            type="button"
+            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition"
+          >
+            Export CSV
+          </button>
         </div>
+
+        <button
+          id="btnExecute"
+          type="button"
+          class="mt-3 w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center justify-center gap-2"
+        >
+          <svg
+            id="execSpinner"
+            class="hidden w-4 h-4 spin"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" d="M12 3a9 9 0 109 9" />
+          </svg>
+          <span id="btnExecuteLabel">Execute removals</span>
+        </button>
+        <p
+          id="execHint"
+          class="mt-1.5 text-[11px] text-slate-500 text-center"
+        ></p>
+
         <div class="flex gap-2 mt-3 mb-2">
           <button
             id="tabQueueUnfollow"
             type="button"
             class="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 transition"
           >
-            To Unfollow (<span id="countTabUnfollow">0</span>)
+            Queued (<span id="countTabUnfollow">0</span>)
           </button>
           <button
             id="tabQueueKept"
@@ -383,6 +415,7 @@
             Kept (<span id="countTabKept">0</span>)
           </button>
         </div>
+
         <div
           id="queueList"
           class="flex-1 overflow-y-auto space-y-2 pr-1 mt-1 min-h-[220px]"
@@ -390,1660 +423,603 @@
       </aside>
     </main>
 
-    <!-- ───────────────────────── CONNECT MODAL ───────────────────────── -->
-    <div
-      id="connectModal"
-      class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto"
-      >
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <h3 class="text-base font-bold text-white">
-              Connect your Facebook account
-            </h3>
-            <p class="text-xs text-slate-400 mt-0.5">
-              OAuth runs in your browser. Tokens stay in
-              <code>sessionStorage</code> and are never sent anywhere but
-              graph.facebook.com.
-            </p>
-          </div>
-          <button
-            id="btnCloseConnect"
-            class="text-slate-400 hover:text-white p-1"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            data-ctab="live"
-            class="ctab flex-1 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition"
-          >
-            Live Graph API
-          </button>
-          <button
-            data-ctab="dyi"
-            class="ctab flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition"
-          >
-            Official data export
-          </button>
-        </div>
-
-        <!-- LIVE -->
-        <div id="ctabLive" class="space-y-3">
-          <div
-            class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs space-y-1.5"
-          >
-            <p class="font-semibold text-blue-400">One-time app setup</p>
-            <ol class="list-decimal list-inside space-y-1 text-slate-400">
-              <li>
-                Create an app at <strong>developers.facebook.com/apps</strong> →
-                type <strong>Consumer</strong>.
-              </li>
-              <li>
-                Add the product <strong>Facebook Login → Web</strong>, set Site
-                URL to this page's origin.
-              </li>
-              <li>
-                In <em>Facebook Login → Settings</em>, add this origin to
-                <strong>Allowed Domains for the JavaScript SDK</strong>.
-              </li>
-              <li>
-                Paste the <strong>App ID</strong> below. Page must be served
-                over <strong>https://</strong> or
-                <strong>http://localhost</strong>.
-              </li>
-            </ol>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <label class="block col-span-2 sm:col-span-1">
-              <span class="text-xs font-semibold text-slate-300 block mb-1"
-                >Facebook App ID</span
-              >
-              <input
-                id="inpAppId"
-                type="text"
-                inputmode="numeric"
-                placeholder="1234567890123456"
-                class="w-full rounded-lg bg-slate-950 border border-slate-800 p-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500"
-              />
-            </label>
-            <label class="block col-span-2 sm:col-span-1">
-              <span class="text-xs font-semibold text-slate-300 block mb-1"
-                >Graph API version</span
-              >
-              <select
-                id="inpVersion"
-                class="w-full rounded-lg bg-slate-950 border border-slate-800 p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-              >
-                <option>v23.0</option>
-                <option>v22.0</option>
-                <option selected>v21.0</option>
-                <option>v20.0</option>
-                <option>v19.0</option>
-              </select>
-            </label>
-            <label class="block col-span-2">
-              <span class="text-xs font-semibold text-slate-300 block mb-1"
-                >Requested permissions (scopes)</span
-              >
-              <input
-                id="inpScopes"
-                type="text"
-                class="w-full rounded-lg bg-slate-950 border border-slate-800 p-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500"
-              />
-              <span class="text-[11px] text-slate-500 mt-1 block"
-                ><code>user_friends</code> &amp;
-                <code>pages_show_list</code> need App Review.
-                <code>user_likes</code> is legacy — remove it if login errors
-                with "invalid scopes".</span
-              >
-            </label>
-          </div>
-
-          <button
-            id="btnDoLogin"
-            type="button"
-            class="w-full py-2.5 rounded-lg bg-[#1877F2] hover:bg-[#166fe0] text-white text-sm font-bold transition flex items-center justify-center gap-2"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"
-              />
-            </svg>
-            Continue with Facebook
-          </button>
-          <button
-            id="btnRerequest"
-            type="button"
-            class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700"
-          >
-            Re-request declined permissions
-          </button>
-
-          <details class="bg-slate-950 border border-slate-800 rounded-xl p-3">
-            <summary
-              class="text-xs font-semibold text-slate-300 cursor-pointer"
-            >
-              Advanced: use an access token directly
-            </summary>
-            <p class="text-[11px] text-slate-500 my-2">
-              Generate one in <strong>Graph API Explorer</strong> to test before
-              App Review. Stored in sessionStorage only.
-            </p>
-            <div class="flex gap-2">
-              <input
-                id="inpToken"
-                type="password"
-                placeholder="EAAG..."
-                class="flex-1 rounded-lg bg-slate-900 border border-slate-800 p-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500"
-              />
-              <button
-                id="btnUseToken"
-                type="button"
-                class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white"
-              >
-                Use
-              </button>
-            </div>
-          </details>
-
-          <p
-            class="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5"
-          >
-            <strong>API limits:</strong> <code>/me/friends</code> returns only
-            friends who also use this app (total count is still real). There is
-            <strong>no endpoint</strong> for the people/pages you follow — use
-            the data export tab for a complete list.
-          </p>
-        </div>
-
-        <!-- DYI -->
-        <div id="ctabDyi" class="space-y-3 hidden">
-          <div
-            class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs space-y-1.5"
-          >
-            <p class="font-semibold text-emerald-400">
-              The only complete source for your following list
-            </p>
-            <ol class="list-decimal list-inside space-y-1 text-slate-400">
-              <li>
-                Facebook → <strong>Settings &amp; privacy</strong> →
-                <strong>Accounts Center</strong> →
-                <strong>Your information and permissions</strong>.
-              </li>
-              <li>
-                <strong>Download your information</strong> →
-                <strong>Some of your information</strong> → check
-                <strong>Followers and following</strong> +
-                <strong>Friends</strong>.
-              </li>
-              <li>
-                Format <strong>JSON</strong> → download → select
-                <code>following.json</code>, <code>followers.json</code>,
-                <code>friends.json</code> below.
-              </li>
-            </ol>
-          </div>
-          <input
-            id="fileInputJson"
-            type="file"
-            accept=".json,application/json"
-            multiple
-            class="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer bg-slate-950 border border-slate-800 rounded-lg p-1"
-          />
-          <p class="text-[11px] text-slate-500">
-            Files are parsed locally with <code>FileReader</code>; nothing is
-            uploaded. Accounts present in followers/friends files are
-            auto-tagged <strong>Mutual</strong>.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ───────────────────────── STATUS MODAL ───────────────────────── -->
-    <div
-      id="statusModal"
-      class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-3 max-h-[88vh] overflow-y-auto"
-      >
-        <div class="flex items-start justify-between">
-          <h3 class="text-base font-bold text-white">Connection diagnostics</h3>
-          <button
-            id="btnCloseStatus"
-            class="text-slate-400 hover:text-white p-1"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-        <div id="statusBody" class="text-xs text-slate-300 space-y-3"></div>
-        <div class="pt-2 border-t border-slate-800 flex justify-end gap-2">
-          <button
-            id="btnRevoke"
-            type="button"
-            class="px-3 py-1.5 rounded-lg bg-rose-600/15 hover:bg-rose-600/25 text-rose-300 border border-rose-600/30 text-xs font-semibold"
-          >
-            Revoke app permissions
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BUSY OVERLAY + NOTIFICATIONS -->
-    <div
-      id="busyOverlay"
-      class="fixed inset-0 z-[60] hidden bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3"
-    >
-      <div
-        class="w-10 h-10 border-[3px] border-slate-700 border-t-blue-500 rounded-full animate-spin"
-      ></div>
-      <p id="busyText" class="text-xs font-medium text-slate-300"></p>
-    </div>
-    <div
-      id="notifyHost"
-      class="fixed top-16 left-1/2 -translate-x-1/2 z-[70] w-full max-w-md px-4 space-y-2 pointer-events-none"
-    ></div>
     <div
       id="toast"
-      class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-white shadow-xl opacity-0 pointer-events-none transition-opacity duration-200"
+      class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-medium text-white shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 max-w-[90vw] text-center"
     ></div>
 
+    <script src="assets/config.js"></script>
     <script>
       (function () {
-        'use strict';
+        /* ---------------------------------------------------------------
+           CONFIG
+        ---------------------------------------------------------------- */
+        const CFG = Object.assign({
+          FB_APP_ID: '1178091165318174',
+          GRAPH_VERSION: 'v21.0',
+          API_BASE: '' // e.g. 'https://consumer-api.onrender.com' ; '' = assisted-only mode
+        }, window.APP_CONFIG || {});
 
-        /* ══════════════ CONFIG / STATE ══════════════ */
-        const CFG_KEY = 'fb_audit_cfg_v2',
-          STATE_KEY = 'fb_audit_state_v2',
-          SESS_KEY = 'fb_audit_sess_v2';
-        const DEFAULT_SCOPES =
-          'public_profile,user_friends,user_likes,pages_show_list';
 
-        let cfg = { appId: '', version: 'v21.0', scopes: DEFAULT_SCOPES };
-        let session = { token: null, userId: null, source: null }; // sessionStorage only
-        let state = {
+        const SCOPES = ['public_profile', 'user_friends', 'user_likes', 'pages_show_list'].join(',');
+        const STORAGE_KEY = 'fb_swipe_audit_v2';
+
+
+        const state = {
           connected: false,
-          profile: null,
+          user: null,
+          token: null,
+          grantedScopes: [],
+          friendTotal: null,
           accounts: [],
-          decisions: {},
+          decisions: {},     // id -> 'remove' | 'keep'
+          results: {},       // id -> { status, message, link }
           history: [],
           filter: 'all',
           queueTab: 'unfollow',
-          lastSync: null,
-          diagnostics: null,
-          dataSource: null,
+          executing: false
         };
+
 
         const $ = (id) => document.getElementById(id);
         const els = {
-          badge: $('dataSourceBadge'),
-          stage: $('deckStage'),
-          queue: $('queueList'),
-          statRemaining: $('statRemaining'),
-          statUnfollow: $('statUnfollow'),
-          statKept: $('statKept'),
-          cntU: $('countTabUnfollow'),
-          cntK: $('countTabKept'),
-          tabU: $('tabQueueUnfollow'),
-          tabK: $('tabQueueKept'),
-          btnUndo: $('btnUndo'),
-          btnUnfollow: $('btnUnfollow'),
-          btnKeep: $('btnKeep'),
-          btnConnect: $('btnConnect'),
-          btnConnectLabel: $('btnConnectLabel'),
-          btnSync: $('btnSync'),
-          btnDisconnect: $('btnDisconnect'),
-          btnStatus: $('btnStatus'),
-          btnSettings: $('btnSettings'),
-          connectModal: $('connectModal'),
-          statusModal: $('statusModal'),
-          statusBody: $('statusBody'),
-          inpAppId: $('inpAppId'),
-          inpVersion: $('inpVersion'),
-          inpScopes: $('inpScopes'),
-          inpToken: $('inpToken'),
-          fileInput: $('fileInputJson'),
-          busy: $('busyOverlay'),
-          busyText: $('busyText'),
-          toast: $('toast'),
-          notify: $('notifyHost'),
-          chip: $('profileChip'),
-          chipAvatar: $('profileChipAvatar'),
-          chipName: $('profileChipName'),
-          pills: [...document.querySelectorAll('.filter-pill')],
-          ctabs: [...document.querySelectorAll('.ctab')],
+          badge: $('dataSourceBadge'), userChip: $('userChip'), userAvatar: $('userAvatar'), userName: $('userName'),
+          btnConnect: $('btnConnect'), btnConnectBig: $('btnConnectBig'), btnConnectLabel: $('btnConnectLabel'),
+          btnRefresh: $('btnRefresh'), btnLogout: $('btnLogout'),
+          connectGate: $('connectGate'), deckSection: $('deckSection'), queueSection: $('queueSection'),
+          scopeStrip: $('scopeStrip'), scopeChips: $('scopeChips'), gateError: $('gateError'),
+          deckStage: $('deckStage'), queueList: $('queueList'),
+          statRemaining: $('statRemaining'), statUnfollow: $('statUnfollow'), statKept: $('statKept'),
+          countTabUnfollow: $('countTabUnfollow'), countTabKept: $('countTabKept'),
+          tabU: $('tabQueueUnfollow'), tabK: $('tabQueueKept'),
+          btnUndo: $('btnUndo'), btnUnfollow: $('btnUnfollow'), btnKeep: $('btnKeep'),
+          btnExecute: $('btnExecute'), btnExecuteLabel: $('btnExecuteLabel'), execSpinner: $('execSpinner'),
+          execHint: $('execHint'), btnExportCsv: $('btnExportCsv'), toast: $('toast'),
+          pills: Array.from(document.querySelectorAll('.filter-pill'))
         };
 
-        /* ══════════════ PERSISTENCE ══════════════ */
-        const safeJSON = (s, f) => {
-          try {
-            return JSON.parse(s);
-          } catch (e) {
-            return f;
-          }
-        };
-        function saveCfg() {
-          try {
-            localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-          } catch (e) {}
-        }
-        function saveState() {
-          try {
-            localStorage.setItem(STATE_KEY, JSON.stringify(state));
-          } catch (e) {}
-        }
-        function saveSession() {
-          try {
-            session.token
-              ? sessionStorage.setItem(SESS_KEY, JSON.stringify(session))
-              : sessionStorage.removeItem(SESS_KEY);
-          } catch (e) {}
-        }
-        function loadPersisted() {
-          const c = safeJSON(localStorage.getItem(CFG_KEY), null);
-          if (c) cfg = { ...cfg, ...c };
-          const s = safeJSON(localStorage.getItem(STATE_KEY), null);
-          if (s && Array.isArray(s.accounts)) state = { ...state, ...s };
-          const sess = safeJSON(sessionStorage.getItem(SESS_KEY), null);
-          if (sess) session = sess;
-        }
 
-        /* ══════════════ UI PRIMITIVES ══════════════ */
-        let toastTimer = null;
-        function showToast(msg) {
+        /* ---------------------------------------------------------------
+           UTIL
+        ---------------------------------------------------------------- */
+        let toastTimer;
+        function toast(msg, tone = 'default') {
           els.toast.textContent = msg;
-          els.toast.classList.remove('opacity-0');
+          els.toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border text-xs font-medium shadow-xl transition-opacity duration-200 max-w-[90vw] text-center ' +
+            (tone === 'success' ? 'bg-emerald-600 border-emerald-500 text-white'
+             : tone === 'error' ? 'bg-rose-600 border-rose-500 text-white'
+             : 'bg-slate-800 border-slate-700 text-white');
           clearTimeout(toastTimer);
-          toastTimer = setTimeout(
-            () => els.toast.classList.add('opacity-0'),
-            2800,
-          );
+          toastTimer = setTimeout(() => els.toast.classList.add('opacity-0'), 3200);
         }
-        function notify({
-          title,
-          body,
-          tone = 'success',
-          avatar = null,
-          ttl = 7000,
-        }) {
-          const tones = {
-            success: 'border-emerald-500/40 bg-emerald-500/10',
-            error: 'border-rose-500/40 bg-rose-500/10',
-            warn: 'border-amber-500/40 bg-amber-500/10',
-            info: 'border-blue-500/40 bg-blue-500/10',
-          };
-          const dot = {
-            success: 'bg-emerald-400',
-            error: 'bg-rose-400',
-            warn: 'bg-amber-400',
-            info: 'bg-blue-400',
-          }[tone];
-          const n = document.createElement('div');
-          n.className = `banner-in pointer-events-auto flex items-start gap-3 p-3 rounded-xl border ${tones[tone]} backdrop-blur bg-slate-900/95 shadow-2xl`;
-          n.innerHTML = `
-      ${
-        avatar
-          ? `<img src="${esc(avatar)}" alt="" class="w-9 h-9 rounded-full object-cover shrink-0" referrerpolicy="no-referrer">`
-          : `<span class="w-2 h-2 mt-1.5 rounded-full ${dot} shrink-0"></span>`
-      }
-      <div class="min-w-0 flex-1">
-        <p class="text-xs font-bold text-white">${esc(title)}</p>
-        ${body ? `<p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">${body}</p>` : ''}
-      </div>
-      <button class="text-slate-500 hover:text-white shrink-0" aria-label="Dismiss">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>`;
-          n.querySelector('button').onclick = () => n.remove();
-          els.notify.appendChild(n);
-          if (ttl)
-            setTimeout(() => {
-              n.style.opacity = '0';
-              setTimeout(() => n.remove(), 300);
-            }, ttl);
+        const esc = (s) => String(s ?? '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"').replace(/'/g,''');
+        const initials = (n) => { const p = String(n||'?').trim().split(/\s+/); return (p.length===1?p[0].slice(0,2):p[0][0]+p[p.length-1][0]).toUpperCase(); };
+        function gradient(n){const g=['from-blue-500 to-indigo-600','from-rose-500 to-orange-500','from-emerald-500 to-teal-600','from-violet-500 to-purple-600','from-amber-500 to-pink-500','from-cyan-500 to-blue-600'];let h=0;for(let i=0;i<n.length;i++)h=n.charCodeAt(i)+((h<<5)-h);return g[Math.abs(h)%g.length];}
+
+
+        function persist() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+              uid: state.user && state.user.id, decisions: state.decisions,
+              results: state.results, history: state.history, filter: state.filter
+            }));
+          } catch (e) {}
         }
-        function setBusy(on, text = '') {
-          els.busyText.textContent = text;
-          els.busy.classList.toggle('hidden', !on);
-        }
-        function esc(s) {
-          return String(s ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        function restore(uid) {
+          try {
+            const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            if (raw && raw.uid === uid) {
+              state.decisions = raw.decisions || {};
+              state.results = raw.results || {};
+              state.history = Array.isArray(raw.history) ? raw.history : [];
+              state.filter = raw.filter || 'all';
+            }
+          } catch (e) {}
         }
 
-        /* ══════════════ FACEBOOK SDK + GRAPH ══════════════ */
-        let sdkPromise = null;
-        function loadSdk() {
-          if (window.FB) {
+
+        /* ---------------------------------------------------------------
+           FACEBOOK SDK
+        ---------------------------------------------------------------- */
+        window.fbAsyncInit = function () {
+          FB.init({ appId: CFG.FB_APP_ID, cookie: true, xfbml: false, version: CFG.GRAPH_VERSION });
+          FB.getLoginStatus((res) => {
+            if (res.status === 'connected') onAuth(res.authResponse);
+            else render();
+          });
+        };
+        (function (d, s, id) {
+          const fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          const js = d.createElement(s); js.id = id;
+          js.src = 'https://connect.facebook.net/en_US/sdk.js';
+          js.onerror = () => showGateError('Facebook SDK failed to load (ad-blocker or offline).');
+          fjs.parentNode.insertBefore(js, fjs);
+        })(document, 'script', 'facebook-jssdk');
+
+
+        function showGateError(msg) {
+          els.gateError.textContent = msg;
+          els.gateError.classList.remove('hidden');
+        }
+
+
+        function connect() {
+          if (typeof FB === 'undefined') { showGateError('Facebook SDK not ready. Reload the page.'); return; }
+          els.gateError.classList.add('hidden');
+          FB.login((res) => {
+            if (res.status === 'connected') onAuth(res.authResponse);
+            else toast('Facebook connection cancelled', 'error');
+          }, { scope: SCOPES, return_scopes: true, auth_type: 'rerequest' });
+        }
+
+
+        async function onAuth(authResponse) {
+          state.connected = true;
+          state.token = authResponse.accessToken;
+          state.grantedScopes = (authResponse.grantedScopes || '').split(',').filter(Boolean);
+
+
+          // Optional: upgrade to a long-lived token through your backend
+          if (CFG.API_BASE) {
             try {
-              FB.init({
-                appId: cfg.appId,
-                cookie: true,
-                xfbml: false,
-                version: cfg.version,
+              const r = await fetch(CFG.API_BASE + '/api/auth/exchange', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accessToken: state.token })
               });
-            } catch (e) {}
-            return Promise.resolve(window.FB);
+              const j = await r.json();
+              if (j.accessToken) state.token = j.accessToken;
+            } catch (e) { /* non-fatal */ }
           }
-          if (sdkPromise) return sdkPromise;
-          sdkPromise = new Promise((resolve, reject) => {
-            window.fbAsyncInit = function () {
-              FB.init({
-                appId: cfg.appId,
-                cookie: true,
-                xfbml: false,
-                version: cfg.version,
-              });
-              resolve(window.FB);
-            };
-            const s = document.createElement('script');
-            s.src = 'https://connect.facebook.net/en_US/sdk.js';
-            s.async = true;
-            s.defer = true;
-            s.crossOrigin = 'anonymous';
-            s.onerror = () => {
-              sdkPromise = null;
-              reject(
-                new Error('Facebook SDK blocked (ad-blocker or offline).'),
-              );
-            };
-            document.head.appendChild(s);
-            setTimeout(
-              () => reject(new Error('Facebook SDK timed out.')),
-              15000,
-            );
-          });
-          return sdkPromise;
+
+
+          try {
+            const me = await graph('/me', { fields: 'id,name,picture.width(128).height(128)' });
+            state.user = me;
+            restore(me.id);
+            render();
+            toast('Connected as ' + me.name + ' — loading your data…', 'success');
+            await loadAllData();
+          } catch (e) {
+            toast('Could not read profile: ' + e.message, 'error');
+          }
         }
 
-        async function graph(path, params = {}) {
-          if (!session.token)
-            throw new Error('No access token. Connect first.');
-          const url = new URL(
-            `https://graph.facebook.com/${cfg.version}/${String(path).replace(/^\//, '')}`,
-          );
-          Object.entries(params).forEach(([k, v]) => {
-            if (v != null) url.searchParams.set(k, v);
+
+        function disconnect() {
+          FB.logout(() => {
+            Object.assign(state, { connected: false, user: null, token: null, accounts: [], decisions: {}, results: {}, history: [], grantedScopes: [], friendTotal: null });
+            localStorage.removeItem(STORAGE_KEY);
+            render();
+            toast('Disconnected from Facebook');
           });
-          url.searchParams.set('access_token', session.token);
-          const res = await fetch(url.toString());
-          const json = await res.json().catch(() => ({}));
-          if (json.error) {
-            const e = new Error(json.error.message || 'Graph error');
-            e.fb = json.error;
-            throw e;
-          }
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        }
+
+
+        /* ---------------------------------------------------------------
+           GRAPH API (with cursor paging)
+        ---------------------------------------------------------------- */
+        async function graph(path, params = {}) {
+          const qs = new URLSearchParams(Object.assign({ access_token: state.token }, params));
+          const url = `https://graph.facebook.com/${CFG.GRAPH_VERSION}${path}?${qs}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (json.error) { const e = new Error(json.error.message); e.code = json.error.code; e.sub = json.error.error_subcode; throw e; }
           return json;
         }
 
-        // Paginated fetch that never throws — returns a per-edge report
-        async function graphList(path, params = {}, maxItems = 5000) {
-          const report = {
-            path,
-            ok: false,
-            items: [],
-            total: null,
-            error: null,
+
+        async function graphAll(path, params = {}, max = 2000) {
+          let out = [], next = null, page = await graph(path, Object.assign({ limit: 100 }, params));
+          out = out.concat(page.data || []);
+          const summary = page.summary || null;
+          next = page.paging && page.paging.next;
+          while (next && out.length < max) {
+            const res = await fetch(next);
+            const j = await res.json();
+            if (j.error) break;
+            out = out.concat(j.data || []);
+            next = j.paging && j.paging.next;
+          }
+          return { data: out, summary };
+        }
+
+
+        function normalize(raw, kind) {
+          const picture = raw.picture && raw.picture.data ? raw.picture.data.url : null;
+          const base = {
+            id: kind + ':' + raw.id,
+            fbId: raw.id,
+            name: raw.name || 'Facebook Account',
+            picture,
+            url: raw.link || `https://www.facebook.com/${raw.id}`,
+            source: kind
           };
+          if (kind === 'friend') return Object.assign(base, {
+            type: 'Friend', action: 'unfriend', mutual: true,
+            meta: 'Friend · uses this app', reason: 'Mutual friend connection'
+          });
+          if (kind === 'page') return Object.assign(base, {
+            type: raw.category || 'Page', action: 'unfollow_page', mutual: false,
+            meta: raw.category ? 'Page · ' + raw.category : 'Page you follow',
+            reason: raw.created_time ? 'Followed since ' + raw.created_time.slice(0, 10) : 'Page you follow'
+          });
+          return Object.assign(base, {
+            type: 'Managed Page', action: 'none', mutual: false,
+            meta: 'You are an admin of this Page', reason: 'Page you manage — cannot be unfollowed'
+          });
+        }
+
+
+        async function loadAllData() {
+          const accounts = [];
+          const notes = [];
+
+
+          // 1) Friends (app-scoped only — Facebook platform limitation)
           try {
-            const first = await graph(path, { limit: 100, ...params });
-            report.items = first.data || [];
-            report.total = first.summary
-              ? (first.summary.total_count ?? null)
-              : null;
-            let next = first.paging && first.paging.next,
-              guard = 0;
-            while (next && report.items.length < maxItems && guard < 60) {
-              const r = await fetch(next);
-              const j = await r.json().catch(() => ({}));
-              if (j.error || !j.data) break;
-              report.items = report.items.concat(j.data);
-              next = j.paging && j.paging.next;
-              guard++;
+            const r = await graphAll('/me/friends', { fields: 'id,name,picture.width(128).height(128),link', summary: 'total_count' });
+            state.friendTotal = r.summary ? r.summary.total_count : null;
+            r.data.forEach((f) => accounts.push(normalize(f, 'friend')));
+            if (state.friendTotal != null) {
+              notes.push(`${r.data.length} of ${state.friendTotal} friends visible (Graph API returns only friends who also use this app)`);
             }
-            report.ok = true;
-          } catch (e) {
-            report.error =
-              (e.fb &&
-                e.fb.message + (e.fb.code ? ` (code ${e.fb.code})` : '')) ||
-              e.message;
-          }
-          return report;
-        }
+          } catch (e) { notes.push('Friends unavailable: ' + e.message); }
 
-        /* ══════════════ CONNECT / DISCONNECT ══════════════ */
-        async function connectWithFacebook(rerequest = false) {
-          if (!cfg.appId) {
-            openConnect();
-            showToast('Enter your Facebook App ID first');
-            els.inpAppId.focus();
-            return;
-          }
-          setBusy(true, 'Loading Facebook SDK…');
-          let FBsdk;
-          try {
-            FBsdk = await loadSdk();
-          } catch (e) {
-            setBusy(false);
-            notify({
-              title: 'Could not load Facebook SDK',
-              body: esc(e.message),
-              tone: 'error',
-            });
-            return;
-          }
 
-          setBusy(true, 'Waiting for Facebook login…');
-          const opts = { scope: cfg.scopes, return_scopes: true };
-          if (rerequest) opts.auth_type = 'rerequest';
-
-          FBsdk.login((resp) => {
-            if (resp && resp.authResponse && resp.authResponse.accessToken) {
-              session = {
-                token: resp.authResponse.accessToken,
-                userId: resp.authResponse.userID,
-                source: 'oauth',
-              };
-              saveSession();
-              syncFromGraph(resp.authResponse.grantedScopes || null);
-            } else {
-              setBusy(false);
-              notify({
-                title: 'Login cancelled',
-                body: 'You denied the request or closed the popup before authorizing.',
-                tone: 'warn',
-              });
-            }
-          }, opts);
-        }
-
-        function useManualToken() {
-          const t = els.inpToken.value.trim();
-          if (!t) {
-            showToast('Paste an access token');
-            return;
-          }
-          session = { token: t, userId: null, source: 'manual-token' };
-          saveSession();
-          els.inpToken.value = '';
-          syncFromGraph();
-        }
-
-        async function disconnect() {
-          try {
-            if (window.FB && session.source === 'oauth') FB.logout(() => {});
-          } catch (e) {}
-          session = { token: null, userId: null, source: null };
-          saveSession();
-          state.connected = false;
-          state.profile = null;
-          state.accounts = [];
-          state.decisions = {};
-          state.history = [];
-          state.diagnostics = null;
-          state.dataSource = null;
-          state.lastSync = null;
-          saveState();
-          renderAll();
-          notify({
-            title: 'Disconnected',
-            body: 'Session token cleared and local audit data removed.',
-            tone: 'info',
-            ttl: 4000,
-          });
-        }
-
-        async function revokePermissions() {
-          if (!session.token) {
-            showToast('Not connected');
-            return;
-          }
-          if (
-            !confirm(
-              "Revoke this app's access to your Facebook account? You will have to authorize again.",
-            )
-          )
-            return;
-          try {
-            const url = new URL(
-              `https://graph.facebook.com/${cfg.version}/me/permissions`,
-            );
-            url.searchParams.set('access_token', session.token);
-            await fetch(url.toString(), { method: 'DELETE' });
-            notify({
-              title: 'Permissions revoked',
-              body: 'The app no longer has access to your account.',
-              tone: 'info',
-            });
-          } catch (e) {
-            notify({
-              title: 'Revoke failed',
-              body: esc(e.message),
-              tone: 'error',
-            });
-          }
-          closeStatus();
-          disconnect();
-        }
-
-        /* ══════════════ GRAPH → APP MODEL ══════════════ */
-        const TWO_YEARS_MS = 1000 * 60 * 60 * 24 * 365 * 2;
-
-        function mapFriend(f) {
-          return {
-            id: 'friend:' + f.id,
-            graphId: f.id,
-            kind: 'friend',
-            name: f.name || 'Facebook user',
-            avatar: f.picture?.data?.is_silhouette
-              ? null
-              : f.picture?.data?.url || null,
-            url: `https://www.facebook.com/profile.php?id=${encodeURIComponent(f.id)}`,
-            altUrl: `https://www.facebook.com/search/top?q=${encodeURIComponent(f.name || '')}`,
-            type: 'Friend',
-            mutual: true,
-            stale: false,
-            followedSince: 'Not exposed by Graph API',
-            lastActive: 'Not exposed by Graph API',
-            reason: 'Mutual friend — friendship implies a two-way follow',
-            source: '/me/friends',
-          };
-        }
-        function mapLikedPage(p) {
-          const t = p.created_time ? new Date(p.created_time).getTime() : null;
-          const stale = t ? Date.now() - t > TWO_YEARS_MS : false;
-          return {
-            id: 'page:' + p.id,
-            graphId: p.id,
-            kind: 'page',
-            name: p.name || 'Facebook Page',
-            avatar: p.picture?.data?.url || null,
-            url: `https://www.facebook.com/${encodeURIComponent(p.id)}`,
-            altUrl: null,
-            type: p.category ? `Page · ${p.category}` : 'Page',
-            mutual: false,
-            stale,
-            followedSince: t
-              ? new Date(t).toISOString().slice(0, 10)
-              : 'Unknown',
-            lastActive:
-              p.fan_count != null
-                ? `${Number(p.fan_count).toLocaleString()} followers`
-                : 'Not exposed by Graph API',
-            reason: stale
-              ? 'Page followed over 2 years ago'
-              : 'Page you follow (one-way)',
-            source: '/me/likes',
-          };
-        }
-        function mapManagedPage(p) {
-          return {
-            id: 'managed:' + p.id,
-            graphId: p.id,
-            kind: 'managed',
-            name: p.name || 'Managed Page',
-            avatar: p.picture?.data?.url || null,
-            url: `https://www.facebook.com/${encodeURIComponent(p.id)}`,
-            altUrl: null,
-            type: p.category ? `Managed Page · ${p.category}` : 'Managed Page',
-            mutual: true,
-            stale: false,
-            followedSince: '—',
-            lastActive:
-              p.fan_count != null
-                ? `${Number(p.fan_count).toLocaleString()} followers`
-                : 'Not exposed by Graph API',
-            reason: 'You administer this Page — do not unfollow',
-            source: '/me/accounts',
-          };
-        }
-
-        async function syncFromGraph(grantedScopes) {
-          setBusy(true, 'Verifying access token…');
-          const diag = {
-            at: new Date().toISOString(),
-            version: cfg.version,
-            source: session.source,
-            edges: [],
-            granted: [],
-            declined: [],
-            grantedScopes,
-          };
-
-          let me;
-          try {
-            me = await graph('me', {
-              fields: 'id,name,picture.width(240).height(240)',
-            });
-          } catch (e) {
-            setBusy(false);
-            notify({
-              title: 'Could not verify your account',
-              body: esc((e.fb && e.fb.message) || e.message),
-              tone: 'error',
-              ttl: 10000,
-            });
-            session.token = null;
-            saveSession();
-            renderAll();
-            return;
-          }
-          state.profile = {
-            id: me.id,
-            name: me.name,
-            avatar: me.picture?.data?.url || null,
-          };
-          session.userId = me.id;
-          saveSession();
-
-          setBusy(true, 'Reading granted permissions…');
-          const perms = await graphList('me/permissions');
-          diag.edges.push({ label: 'Permissions', ...summarize(perms) });
-          (perms.items || []).forEach((p) =>
-            (p.status === 'granted' ? diag.granted : diag.declined).push(
-              p.permission,
-            ),
-          );
-
-          setBusy(true, 'Fetching friends…');
-          const friends = await graphList('me/friends', {
-            fields: 'id,name,picture.width(200).height(200)',
-            summary: 'total_count',
-          });
-          diag.edges.push({
-            label: 'Friends (/me/friends)',
-            ...summarize(friends),
-          });
-
-          setBusy(true, 'Fetching Pages you follow…');
-          const likes = await graphList('me/likes', {
-            fields:
-              'id,name,category,fan_count,created_time,picture.width(200).height(200)',
-          });
-          diag.edges.push({
-            label: 'Followed Pages (/me/likes)',
-            ...summarize(likes),
-          });
-
-          setBusy(true, 'Fetching Pages you manage…');
-          const managed = await graphList('me/accounts', {
-            fields: 'id,name,category,fan_count,picture.width(200).height(200)',
-          });
-          diag.edges.push({
-            label: 'Managed Pages (/me/accounts)',
-            ...summarize(managed),
-          });
-
-          const accounts = [
-            ...(friends.items || []).map(mapFriend),
-            ...(likes.items || []).map(mapLikedPage),
-            ...(managed.items || []).map(mapManagedPage),
-          ];
-
-          // keep prior decisions for accounts that still exist
-          const valid = new Set(accounts.map((a) => a.id));
-          const kept = {};
-          Object.keys(state.decisions).forEach((k) => {
-            if (valid.has(k)) kept[k] = state.decisions[k];
-          });
-
-          state.connected = true;
-          state.accounts = accounts;
-          state.decisions = kept;
-          state.history = state.history.filter((h) => valid.has(h.id));
-          state.diagnostics = diag;
-          state.dataSource = 'graph';
-          state.lastSync = Date.now();
-          diag.friendTotal = friends.total;
-          saveState();
-          renderAll();
-          closeConnect();
-          setBusy(false);
-
-          /* ── the success notification with real numbers ── */
-          const bits = [];
-          bits.push(
-            `<strong>${(friends.items || []).length}</strong> friends${friends.total != null ? ` <span class="text-slate-500">(of ${friends.total} total on Facebook)</span>` : ''}`,
-          );
-          bits.push(
-            `<strong>${(likes.items || []).length}</strong> followed Pages`,
-          );
-          bits.push(
-            `<strong>${(managed.items || []).length}</strong> managed Pages`,
-          );
-          notify({
-            title: `Connected as ${me.name}`,
-            body:
-              bits.join(' · ') +
-              `<br><span class="text-slate-400">Loaded ${accounts.length} real accounts from Graph API ${cfg.version}.</span>`,
-            tone: 'success',
-            avatar: state.profile.avatar,
-            ttl: 9000,
-          });
-
-          const failed = diag.edges.filter((e) => e.error);
-          if (failed.length) {
-            notify({
-              title: `${failed.length} endpoint${failed.length > 1 ? 's' : ''} unavailable`,
-              body:
-                failed
-                  .map(
-                    (f) =>
-                      `<span class="font-semibold">${esc(f.label)}</span>: ${esc(f.error)}`,
-                  )
-                  .join('<br>') +
-                `<br><span class="text-slate-400">Usually means the permission was declined or needs App Review. Open “Status” for details.</span>`,
-              tone: 'warn',
-              ttl: 14000,
-            });
-          }
-          if (accounts.length === 0) {
-            notify({
-              title: 'Connected, but Graph returned no entries',
-              body: 'Facebook exposes no endpoint for your following list, and <code>/me/friends</code> only returns friends who also use this app. Use <strong>Official data export</strong> for the complete list.',
-              tone: 'info',
-              ttl: 0,
-            });
-          }
-        }
-        function summarize(r) {
-          return {
-            count: (r.items || []).length,
-            total: r.total,
-            error: r.error,
-          };
-        }
-
-        /* ══════════════ OFFICIAL DATA EXPORT (DYI) ══════════════ */
-        function extractEntries(json) {
-          const out = [];
-          const buckets = [
-            json?.following_v3,
-            json?.following_v2,
-            json?.following,
-            json?.followers_v3,
-            json?.followers_v2,
-            json?.followers,
-            json?.friends_v3,
-            json?.friends_v2,
-            json?.friends,
-            json?.pages_followed_v2,
-            Array.isArray(json) ? json : null,
-          ].filter(Boolean);
-          buckets.forEach((arr) => {
-            if (!Array.isArray(arr)) return;
-            arr.forEach((item) => {
-              if (Array.isArray(item.string_list_data)) {
-                item.string_list_data.forEach((s) => {
-                  if (s.value || s.href)
-                    out.push({
-                      name: s.value || item.title || 'Facebook account',
-                      url: s.href || null,
-                      timestamp: s.timestamp || item.timestamp || null,
-                    });
-                });
-              } else if (item.name) {
-                out.push({
-                  name: item.name,
-                  url: item.url || item.href || null,
-                  timestamp: item.timestamp || null,
-                });
-              } else if (item.title) {
-                out.push({
-                  name: item.title,
-                  url: null,
-                  timestamp: item.timestamp || null,
-                });
-              }
-            });
-          });
-          return out;
-        }
-
-        async function handleExportFiles(files) {
-          setBusy(true, 'Parsing your Facebook export…');
-          const following = [],
-            mutualNames = new Set();
-          for (const file of files) {
-            let parsed;
+          // 2) Pages followed — requires approved user_likes
+          if (state.grantedScopes.includes('user_likes') || state.grantedScopes.length === 0) {
             try {
-              parsed = JSON.parse(await file.text());
-            } catch (e) {
-              setBusy(false);
-              notify({
-                title: `Could not parse ${esc(file.name)}`,
-                body: 'Make sure you exported in <strong>JSON</strong> format, not HTML.',
-                tone: 'error',
-              });
-              return;
-            }
-            const entries = extractEntries(parsed);
-            const n = file.name.toLowerCase();
-            if (n.includes('follower') || n.includes('friend'))
-              entries.forEach((e) => mutualNames.add(e.name.toLowerCase()));
-            else following.push(...entries);
+              const r = await graphAll('/me/likes', { fields: 'id,name,category,link,picture.width(128).height(128),created_time' });
+              r.data.forEach((p) => accounts.push(normalize(p, 'page')));
+            } catch (e) { notes.push('Followed Pages unavailable (user_likes needs App Review)'); }
+          } else {
+            notes.push('user_likes not granted — followed Pages skipped');
           }
-          if (!following.length) {
-            setBusy(false);
-            notify({
-              title: 'No following entries found',
-              body: 'Select <code>following.json</code> (and optionally <code>followers.json</code> / <code>friends.json</code>).',
-              tone: 'warn',
-            });
-            return;
-          }
-          const nowSec = Date.now() / 1000;
-          const accounts = following.map((e, i) => {
-            const mutual =
-              mutualNames.size > 0 && mutualNames.has(e.name.toLowerCase());
-            const ageY = e.timestamp
-              ? (nowSec - e.timestamp) / (365 * 86400)
-              : null;
-            const stale = ageY != null && ageY > 2;
-            return {
-              id: 'dyi:' + i + ':' + e.name.slice(0, 24),
-              graphId: null,
-              kind: 'following',
-              name: e.name,
-              avatar: null,
-              url:
-                e.url ||
-                `https://www.facebook.com/search/top?q=${encodeURIComponent(e.name)}`,
-              altUrl: null,
-              type: 'Followed account',
-              mutual,
-              stale,
-              followedSince: e.timestamp
-                ? new Date(e.timestamp * 1000).toISOString().slice(0, 10)
-                : 'Unknown',
-              lastActive: 'Not included in export',
-              reason:
-                !mutual && stale
-                  ? 'Non-mutual & followed 2+ years ago'
-                  : !mutual
-                    ? 'Not present in your followers/friends files'
-                    : stale
-                      ? 'Mutual, followed 2+ years ago'
-                      : 'Mutual connection',
-              source: 'Facebook data export',
-            };
-          });
 
-          state.connected = true;
-          state.accounts = accounts;
-          state.decisions = {};
-          state.history = [];
-          state.dataSource = 'export';
-          state.lastSync = Date.now();
-          state.diagnostics = {
-            at: new Date().toISOString(),
-            source: 'Official data export',
-            edges: [
-              { label: 'following.json', count: following.length, error: null },
-              {
-                label: 'followers/friends cross-reference',
-                count: mutualNames.size,
-                error: null,
-              },
-            ],
-            granted: [],
-            declined: [],
-          };
-          saveState();
-          renderAll();
-          closeConnect();
-          setBusy(false);
-          notify({
-            title: 'Facebook export loaded',
-            body: `<strong>${accounts.length}</strong> followed accounts · <strong>${accounts.filter((a) => !a.mutual).length}</strong> non-mutual · <strong>${accounts.filter((a) => a.stale).length}</strong> older than 2 years.`,
-            tone: 'success',
-            ttl: 9000,
-          });
+
+          // 3) Pages managed
+          try {
+            const r = await graphAll('/me/accounts', { fields: 'id,name,category,link,picture.width(128).height(128)' });
+            r.data.forEach((p) => accounts.push(normalize(p, 'managed')));
+          } catch (e) { /* optional */ }
+
+
+          // de-dup
+          const seen = new Set();
+          state.accounts = accounts.filter((a) => (seen.has(a.id) ? false : (seen.add(a.id), true)));
+
+
+          persist();
+          render();
+
+
+          if (state.accounts.length === 0) {
+            toast('Connected, but Facebook returned 0 records for the granted permissions.', 'error');
+          } else {
+            toast(`✅ Loaded ${state.accounts.length} real accounts from Facebook`, 'success');
+          }
+          if (notes.length) setTimeout(() => toast(notes[0]), 3400);
         }
 
-        /* ══════════════ FILTERS / DECK ══════════════ */
-        function matchesFilter(a) {
-          switch (state.filter) {
-            case 'friends':
-              return a.kind === 'friend';
-            case 'pages':
-              return a.kind === 'page' || a.kind === 'managed';
-            case 'non-mutual':
-              return !a.mutual;
-            case 'stale':
-              return !!a.stale;
-            default:
-              return true;
-          }
-        }
-        const pending = () =>
-          state.accounts.filter(
-            (a) => !state.decisions[a.id] && matchesFilter(a),
-          );
-        function initials(n) {
-          const p = String(n || '?')
-            .trim()
-            .split(/\s+/);
-          return (
-            p.length === 1 ? p[0].slice(0, 2) : p[0][0] + p[p.length - 1][0]
-          ).toUpperCase();
-        }
-        function gradient(n) {
-          const g = [
-            'from-blue-500 to-indigo-600',
-            'from-rose-500 to-orange-500',
-            'from-emerald-500 to-teal-600',
-            'from-violet-500 to-purple-600',
-            'from-amber-500 to-pink-500',
-            'from-cyan-500 to-blue-600',
-          ];
-          let h = 0;
-          for (let i = 0; i < n.length; i++)
-            h = n.charCodeAt(i) + ((h << 5) - h);
-          return g[Math.abs(h) % g.length];
-        }
+
+        /* ---------------------------------------------------------------
+           DECK
+        ---------------------------------------------------------------- */
+        const matches = (a) =>
+          state.filter === 'all' ? true :
+          state.filter === 'friends' ? a.source === 'friend' :
+          state.filter === 'pages' ? a.source === 'page' :
+          a.source === 'managed';
+
+
+        const pending = () => state.accounts.filter((a) => !state.decisions[a.id] && matches(a));
+
 
         function renderDeck() {
-          els.stage.innerHTML = '';
           const list = pending();
-
-          if (!state.connected || state.accounts.length === 0) {
-            const box = document.createElement('div');
-            box.className =
-              'w-full h-full rounded-3xl bg-slate-900 border border-slate-800 border-dashed flex flex-col items-center justify-center p-7 text-center';
-            box.innerHTML = `
-        <div class="w-14 h-14 rounded-2xl bg-[#1877F2]/15 text-[#1877F2] flex items-center justify-center mb-3">
-          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-white">No data loaded</h3>
-        <p class="text-xs text-slate-400 mt-1.5 max-w-xs">Connect your Facebook account to pull your real friends and followed Pages, or load your official Facebook data export for the complete following list.</p>
-        <button id="deckConnectBtn" class="mt-4 px-4 py-2 rounded-lg bg-[#1877F2] hover:bg-[#166fe0] text-white text-xs font-bold">Connect Facebook</button>`;
-            els.stage.appendChild(box);
-            $('deckConnectBtn').onclick = openConnect;
+          els.deckStage.innerHTML = '';
+          if (!list.length) {
+            els.deckStage.innerHTML = `
+              <div class="w-full h-full rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-center">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-3">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-white">All caught up</h3>
+                <p class="text-xs text-slate-400 mt-1 max-w-xs">No accounts left in this filter. Switch filters, undo, or execute your removal queue.</p>
+              </div>`;
             return;
           }
 
-          if (list.length === 0) {
-            const box = document.createElement('div');
-            box.className =
-              'w-full h-full rounded-3xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-center';
-            box.innerHTML = `
-        <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-3">
-          <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-white">All caught up</h3>
-        <p class="text-xs text-slate-400 mt-1 max-w-xs">No accounts left in this filter. Switch filters, undo a swipe, or export your unfollow queue.</p>`;
-            els.stage.appendChild(box);
-            return;
-          }
 
-          const visible = list.slice(0, 3).reverse();
-          visible.forEach((acc, idx) => {
-            const isTop = idx === visible.length - 1,
-              depth = visible.length - 1 - idx;
+          list.slice(0, 3).reverse().forEach((acc, idx, arr) => {
+            const isTop = idx === arr.length - 1;
+            const depth = arr.length - 1 - idx;
             const card = document.createElement('div');
-            card.className =
-              'card-stack-item absolute inset-0 rounded-3xl bg-slate-900 border border-slate-700/90 shadow-2xl p-5 flex flex-col justify-between overflow-hidden';
+            card.className = 'card-stack-item absolute inset-0 rounded-3xl bg-slate-900 border border-slate-700/90 shadow-2xl p-5 flex flex-col justify-between overflow-hidden';
             card.style.transform = `translateY(${depth * 10}px) scale(${1 - depth * 0.04})`;
             card.style.zIndex = String(10 + idx);
             if (!isTop) card.style.pointerEvents = 'none';
 
-            const mutualBadge = acc.mutual
-              ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Mutual</span>'
-              : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">Non-Mutual</span>';
-            const ageBadge = acc.stale
-              ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">2+ years</span>'
-              : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">Recent</span>';
-            const avatar = acc.avatar
-              ? `<img src="${esc(acc.avatar)}" alt="" referrerpolicy="no-referrer" class="w-20 h-20 rounded-full object-cover border-2 border-slate-700 shadow-lg mb-3 bg-slate-800">`
+
+            const avatar = acc.picture
+              ? `<img src="${esc(acc.picture)}" alt="" class="w-20 h-20 rounded-full object-cover shadow-lg mb-3 border-2 border-slate-700" />`
               : `<div class="w-20 h-20 rounded-full bg-gradient-to-br ${gradient(acc.name)} flex items-center justify-center text-2xl font-extrabold text-white shadow-lg mb-3">${esc(initials(acc.name))}</div>`;
 
+
+            const actionLabel = acc.action === 'unfriend' ? 'Unfriend' : acc.action === 'unfollow_page' ? 'Unfollow Page' : 'No action available';
+
+
             card.innerHTML = `
-        <div class="stamp-unfollow stamp-badge pointer-events-none opacity-0 absolute top-6 right-6 border-4 border-rose-500 text-rose-400 font-extrabold text-xl px-3 py-1 rounded-xl rotate-12 tracking-wider">UNFOLLOW</div>
-        <div class="stamp-keep stamp-badge pointer-events-none opacity-0 absolute top-6 left-6 border-4 border-emerald-500 text-emerald-400 font-extrabold text-xl px-3 py-1 rounded-xl -rotate-12 tracking-wider">KEEP</div>
-        <div class="flex flex-col items-center text-center mt-1">
-          ${avatar}
-          <h3 class="text-xl font-bold text-white leading-snug">${esc(acc.name)}</h3>
-          <p class="text-xs text-slate-400 mt-0.5">${esc(acc.type)}</p>
-          <div class="flex flex-wrap items-center justify-center gap-1.5 mt-3">${mutualBadge}${ageBadge}</div>
-        </div>
-        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs">
-          <div class="flex items-center justify-between gap-3 text-slate-400"><span>Followed since</span><span class="text-slate-200 font-medium text-right truncate">${esc(acc.followedSince)}</span></div>
-          <div class="flex items-center justify-between gap-3 text-slate-400"><span>Activity</span><span class="text-slate-200 font-medium text-right truncate">${esc(acc.lastActive)}</span></div>
-          <div class="flex items-center justify-between gap-3 text-slate-400"><span>Data source</span><span class="text-slate-300 font-mono text-[10px] text-right truncate">${esc(acc.source)}</span></div>
-          <div class="pt-1.5 border-t border-slate-800/80 text-slate-300"><span class="text-slate-500">Audit note:</span> ${esc(acc.reason)}</div>
-        </div>
-        <div class="flex items-center gap-2 pt-1">
-          <a href="${esc(acc.url)}" target="_blank" rel="noopener noreferrer" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-blue-300 text-center transition">Open profile &nearr;</a>
-          ${acc.altUrl ? `<a href="${esc(acc.altUrl)}" target="_blank" rel="noopener noreferrer" title="App-scoped IDs may not resolve directly — search by name" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition">Search</a>` : ''}
-        </div>`;
+              <div class="stamp-unfollow stamp-badge pointer-events-none opacity-0 absolute top-6 right-6 border-4 border-rose-500 text-rose-400 font-extrabold text-lg px-3 py-1 rounded-xl rotate-12 tracking-wider">${esc(actionLabel.toUpperCase())}</div>
+              <div class="stamp-keep stamp-badge pointer-events-none opacity-0 absolute top-6 left-6 border-4 border-emerald-500 text-emerald-400 font-extrabold text-xl px-3 py-1 rounded-xl -rotate-12 tracking-wider">KEEP</div>
+              <div class="flex flex-col items-center text-center mt-2">
+                ${avatar}
+                <h3 class="text-xl font-bold text-white leading-snug">${esc(acc.name)}</h3>
+                <p class="text-xs text-slate-400 mt-0.5">${esc(acc.type)}</p>
+                <div class="flex flex-wrap items-center justify-center gap-1.5 mt-3">
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${acc.mutual ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'}">${acc.mutual ? 'Mutual' : 'One-way follow'}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-700/40 text-slate-300 border border-slate-600/50">Live Graph data</span>
+                </div>
+              </div>
+              <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs">
+                <div class="flex items-center justify-between text-slate-400"><span>Facebook ID</span><span class="text-slate-200 font-mono text-[11px]">${esc(acc.fbId)}</span></div>
+                <div class="flex items-center justify-between text-slate-400"><span>Source</span><span class="text-slate-200 font-medium">${esc(acc.meta)}</span></div>
+                <div class="pt-1.5 border-t border-slate-800/80 text-slate-300"><span class="text-slate-500">Note:</span> ${esc(acc.reason)}</div>
+              </div>
+              <a href="${esc(acc.url)}" target="_blank" rel="noopener noreferrer" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-blue-300 text-center transition">Open on Facebook ↗</a>`;
+
+
             if (isTop) attachDrag(card, acc.id);
-            els.stage.appendChild(card);
+            els.deckStage.appendChild(card);
           });
         }
 
+
         function attachDrag(card, id) {
-          let startX = 0,
-            dx = 0,
-            dragging = false;
-          const sU = card.querySelector('.stamp-unfollow'),
-            sK = card.querySelector('.stamp-keep');
+          let sx = 0, cx = 0, dragging = false;
+          const sU = card.querySelector('.stamp-unfollow'), sK = card.querySelector('.stamp-keep');
           card.addEventListener('pointerdown', (e) => {
             if (e.target.closest('a,button')) return;
-            dragging = true;
-            startX = e.clientX;
-            dx = 0;
-            card.classList.add('dragging');
-            try {
-              card.setPointerCapture(e.pointerId);
-            } catch (err) {}
+            dragging = true; sx = e.clientX; cx = 0; card.classList.add('dragging'); card.setPointerCapture(e.pointerId);
           });
           card.addEventListener('pointermove', (e) => {
             if (!dragging) return;
-            dx = e.clientX - startX;
-            card.style.transform = `translateX(${dx}px) rotate(${dx * 0.06}deg)`;
-            const r = Math.min(Math.abs(dx) / 100, 1);
-            if (dx < 0) {
-              sU.style.opacity = String(r);
-              sK.style.opacity = '0';
-            } else {
-              sK.style.opacity = String(r);
-              sU.style.opacity = '0';
-            }
+            cx = e.clientX - sx;
+            card.style.transform = `translateX(${cx}px) rotate(${cx * 0.06}deg)`;
+            const r = Math.min(Math.abs(cx) / 100, 1);
+            sU.style.opacity = cx < 0 ? String(r) : '0';
+            sK.style.opacity = cx > 0 ? String(r) : '0';
           });
-          const end = () => {
-            if (!dragging) return;
-            dragging = false;
-            card.classList.remove('dragging');
-            if (dx < -95) commitSwipe(id, 'unfollow', card);
-            else if (dx > 95) commitSwipe(id, 'keep', card);
-            else {
-              card.style.transform = 'translateY(0) scale(1)';
-              sU.style.opacity = '0';
-              sK.style.opacity = '0';
-            }
+          const up = () => {
+            if (!dragging) return; dragging = false; card.classList.remove('dragging');
+            if (cx < -95) decide(id, 'remove', card);
+            else if (cx > 95) decide(id, 'keep', card);
+            else { card.style.transform = 'translateY(0) scale(1)'; sU.style.opacity = '0'; sK.style.opacity = '0'; }
           };
-          card.addEventListener('pointerup', end);
-          card.addEventListener('pointercancel', end);
+          card.addEventListener('pointerup', up);
+          card.addEventListener('pointercancel', up);
         }
 
-        function commitSwipe(id, decision, cardEl) {
-          const card =
-            cardEl || els.stage.querySelector('.card-stack-item:last-child');
-          if (card) {
-            const dir = decision === 'unfollow' ? -1 : 1;
-            card.style.transform = `translateX(${dir * 440}px) rotate(${dir * 22}deg)`;
+
+        function decide(id, decision, cardEl) {
+          const card = cardEl || els.deckStage.lastElementChild;
+          if (card && card.classList.contains('card-stack-item')) {
+            const d = decision === 'remove' ? -1 : 1;
+            card.style.transform = `translateX(${d * 420}px) rotate(${d * 22}deg)`;
             card.style.opacity = '0';
           }
           state.decisions[id] = decision;
           state.history.push({ id, decision });
-          saveState();
-          setTimeout(renderAll, 170);
+          persist();
+          setTimeout(render, 170);
         }
-        function undoSwipe() {
+
+
+        function undo() {
           if (!state.history.length) return;
           const last = state.history.pop();
           delete state.decisions[last.id];
-          saveState();
-          renderAll();
-          showToast('Undid last swipe');
+          delete state.results[last.id];
+          persist(); render(); toast('Undid last swipe');
         }
 
-        /* ══════════════ QUEUE / STATS ══════════════ */
-        function renderQueue() {
-          const unf = state.accounts.filter(
-            (a) => state.decisions[a.id] === 'unfollow',
-          );
-          const kep = state.accounts.filter(
-            (a) => state.decisions[a.id] === 'keep',
-          );
-          els.cntU.textContent = String(unf.length);
-          els.cntK.textContent = String(kep.length);
-          const items = state.queueTab === 'unfollow' ? unf : kep;
-          els.queue.innerHTML = '';
-          if (!items.length) {
-            els.queue.innerHTML = `<div class="py-10 text-center text-xs text-slate-500">${
-              state.queueTab === 'unfollow'
-                ? 'Swipe left to queue accounts for unfollowing.'
-                : 'Swipe right on accounts you want to keep.'
-            }</div>`;
+
+        /* ---------------------------------------------------------------
+           ACTION EXECUTION (server API)
+        ---------------------------------------------------------------- */
+        const queued = () => state.accounts.filter((a) => state.decisions[a.id] === 'remove');
+
+
+        async function executeQueue() {
+          const targets = queued().filter((a) => a.action !== 'none' && (state.results[a.id] || {}).status !== 'success');
+          if (!targets.length) { toast('Nothing left to execute', 'error'); return; }
+
+
+          if (!CFG.API_BASE) {
+            // Assisted mode: no backend configured
+            targets.forEach((t) => { state.results[t.id] = { status: 'manual', message: 'Backend not configured — opens Facebook', link: t.url }; });
+            persist(); render();
+            toast('No action API configured. Set API_BASE in assets/config.js', 'error');
             return;
           }
-          items.forEach((acc) => {
-            const row = document.createElement('div');
-            row.className =
-              'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800';
-            row.innerHTML = `
-        <div class="flex items-center gap-2 min-w-0">
-          ${
-            acc.avatar
-              ? `<img src="${esc(acc.avatar)}" alt="" referrerpolicy="no-referrer" class="w-7 h-7 rounded-full object-cover shrink-0 bg-slate-800">`
-              : `<div class="w-7 h-7 rounded-full bg-gradient-to-br ${gradient(acc.name)} text-[10px] font-bold text-white flex items-center justify-center shrink-0">${esc(initials(acc.name))}</div>`
+
+
+          state.executing = true; render();
+          try {
+            const res = await fetch(CFG.API_BASE + '/api/actions/execute', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + state.token },
+              body: JSON.stringify({
+                targets: targets.map((t) => ({ id: t.id, fbId: t.fbId, name: t.name, action: t.action, url: t.url }))
+              })
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || ('HTTP ' + res.status));
+
+
+            let ok = 0, manual = 0, failed = 0;
+            (json.results || []).forEach((r) => {
+              state.results[r.id] = { status: r.status, message: r.message, link: r.link };
+              if (r.status === 'success') ok++; else if (r.status === 'manual') manual++; else failed++;
+            });
+            persist();
+            toast(`Executed: ${ok} done · ${manual} need confirmation · ${failed} failed`, ok ? 'success' : 'error');
+          } catch (e) {
+            toast('Action API error: ' + e.message, 'error');
+          } finally {
+            state.executing = false; render();
           }
-          <div class="min-w-0">
-            <div class="text-xs font-semibold text-white truncate">${esc(acc.name)}</div>
-            <div class="text-[11px] text-slate-400 truncate">${esc(acc.type)} · ${acc.mutual ? 'Mutual' : 'Non-mutual'}</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <a href="${esc(acc.url)}" target="_blank" rel="noopener noreferrer" class="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-[11px] font-semibold transition">Open</a>
-          <button type="button" data-restore class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition">Undo</button>
-        </div>`;
-            row.querySelector('[data-restore]').onclick = () => {
-              delete state.decisions[acc.id];
-              state.history = state.history.filter((h) => h.id !== acc.id);
-              saveState();
-              renderAll();
-            };
-            els.queue.appendChild(row);
+        }
+
+
+        /* ---------------------------------------------------------------
+           QUEUE RENDER
+        ---------------------------------------------------------------- */
+        function renderQueue() {
+          const removeList = queued();
+          const keepList = state.accounts.filter((a) => state.decisions[a.id] === 'keep');
+          els.countTabUnfollow.textContent = removeList.length;
+          els.countTabKept.textContent = keepList.length;
+
+
+          const items = state.queueTab === 'unfollow' ? removeList : keepList;
+          els.queueList.innerHTML = '';
+          if (!items.length) {
+            els.queueList.innerHTML = `<div class="py-10 text-center text-xs text-slate-500">${state.queueTab === 'unfollow' ? 'Swipe left to queue unfriend / unfollow actions.' : 'Swipe right on accounts you keep.'}</div>`;
+            return;
+          }
+
+
+          items.forEach((a) => {
+            const r = state.results[a.id];
+            const chip = !r ? ''
+              : r.status === 'success' ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">DONE</span>'
+              : r.status === 'manual' ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">CONFIRM</span>'
+              : '<span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">FAILED</span>';
+
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800';
+            row.innerHTML = `
+              <div class="min-w-0 flex items-center gap-2">
+                ${a.picture ? `<img src="${esc(a.picture)}" class="w-7 h-7 rounded-full object-cover shrink-0" alt="">` : ''}
+                <div class="min-w-0">
+                  <div class="text-xs font-semibold text-white truncate flex items-center gap-1.5">${esc(a.name)} ${chip}</div>
+                  <div class="text-[11px] text-slate-400 truncate">${esc(a.type)} · ${a.action === 'unfriend' ? 'Unfriend' : a.action === 'unfollow_page' ? 'Unfollow' : 'No API action'}${r && r.message ? ' · ' + esc(r.message) : ''}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <a href="${esc((r && r.link) || a.url)}" target="_blank" rel="noopener noreferrer" class="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-[11px] font-semibold transition">Open</a>
+                <button type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition">Undo</button>
+              </div>`;
+            row.querySelector('button').addEventListener('click', () => {
+              delete state.decisions[a.id]; delete state.results[a.id];
+              state.history = state.history.filter((h) => h.id !== a.id);
+              persist(); render();
+            });
+            els.queueList.appendChild(row);
           });
         }
 
-        function renderChrome() {
-          const left = pending().length;
-          els.statRemaining.textContent = String(left);
-          els.statUnfollow.textContent = String(
-            state.accounts.filter((a) => state.decisions[a.id] === 'unfollow')
-              .length,
-          );
-          els.statKept.textContent = String(
-            state.accounts.filter((a) => state.decisions[a.id] === 'keep')
-              .length,
-          );
-          els.btnUndo.disabled = state.history.length === 0;
 
-          if (state.connected && state.accounts.length) {
-            const when = state.lastSync
-              ? new Date(state.lastSync).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '';
-            const src =
-              state.dataSource === 'graph'
-                ? `Live Graph API ${cfg.version}`
-                : 'Official Facebook data export';
-            els.badge.textContent = `${src} · ${state.accounts.length} accounts${when ? ` · synced ${when}` : ''}`;
+        /* ---------------------------------------------------------------
+           MASTER RENDER
+        ---------------------------------------------------------------- */
+        function render() {
+          const on = state.connected;
+          els.connectGate.classList.toggle('hidden', on);
+          els.deckSection.classList.toggle('hidden', !on);
+          els.deckSection.classList.toggle('flex', on);
+          els.queueSection.classList.toggle('hidden', !on);
+          els.queueSection.classList.toggle('flex', on);
+          els.btnConnect.classList.toggle('hidden', on);
+          els.btnRefresh.classList.toggle('hidden', !on);
+          els.btnLogout.classList.toggle('hidden', !on);
+          els.userChip.classList.toggle('hidden', !on);
+          els.userChip.classList.toggle('flex', on);
+          els.scopeStrip.classList.toggle('hidden', !on);
+
+
+          if (on && state.user) {
+            els.userName.textContent = state.user.name;
+            els.userAvatar.src = state.user.picture && state.user.picture.data ? state.user.picture.data.url : '';
+            els.badge.textContent = `Connected · ${state.accounts.length} records${state.friendTotal != null ? ' · ' + state.friendTotal + ' total friends on FB' : ''}`;
             els.badge.className = 'text-xs text-emerald-400 font-medium';
+            els.scopeChips.innerHTML = ['public_profile','user_friends','user_likes','pages_show_list'].map((s) => {
+              const ok = state.grantedScopes.length === 0 || state.grantedScopes.includes(s);
+              return `<span class="px-2 py-0.5 rounded-full border ${ok ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'}">${ok ? '✓' : '✕'} ${s}</span>`;
+            }).join('');
           } else {
-            els.badge.textContent = cfg.appId
-              ? 'Not connected · Click “Connect Facebook”'
-              : 'Not configured · Add your Facebook App ID in Settings';
+            els.badge.textContent = 'Not connected';
             els.badge.className = 'text-xs text-slate-400 font-medium';
           }
 
-          const live = !!session.token;
-          els.btnSync.classList.toggle('hidden', !live);
-          els.btnDisconnect.classList.toggle(
-            'hidden',
-            !(live || state.accounts.length),
-          );
-          els.btnConnectLabel.textContent = live
-            ? 'Reconnect'
-            : 'Connect Facebook';
 
-          if (state.profile) {
-            els.chip.classList.remove('hidden');
-            els.chip.classList.add('flex');
-            els.chipName.textContent = state.profile.name || '';
-            if (state.profile.avatar) els.chipAvatar.src = state.profile.avatar;
-            else els.chipAvatar.removeAttribute('src');
-          } else {
-            els.chip.classList.add('hidden');
-            els.chip.classList.remove('flex');
-          }
+          els.statRemaining.textContent = pending().length;
+          els.statUnfollow.textContent = queued().length;
+          els.statKept.textContent = state.accounts.filter((a) => state.decisions[a.id] === 'keep').length;
+          els.btnUndo.disabled = !state.history.length;
+
+
+          els.btnExecute.disabled = state.executing || !queued().length;
+          els.btnExecuteLabel.textContent = state.executing ? 'Executing…' : `Execute ${queued().length} removal${queued().length === 1 ? '' : 's'}`;
+          els.execSpinner.classList.toggle('hidden', !state.executing);
+          els.execHint.textContent = CFG.API_BASE ? 'Runs through your action API' : 'Set API_BASE in assets/config.js to enable automated execution';
+
 
           els.pills.forEach((p) => {
-            p.className =
-              p.dataset.filter === state.filter
-                ? 'filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-blue-600 text-white'
-                : 'filter-pill px-3 py-1 rounded-full text-xs font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+            p.className = 'filter-pill px-3 py-1 rounded-full text-xs font-semibold transition ' +
+              (p.dataset.filter === state.filter ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700');
           });
-          els.tabU.className =
-            state.queueTab === 'unfollow'
-              ? 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 transition'
-              : 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition';
-          els.tabK.className =
-            state.queueTab === 'kept'
-              ? 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition'
-              : 'flex-1 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition';
-        }
-        function renderAll() {
-          renderChrome();
+          els.tabU.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold transition ' + (state.queueTab === 'unfollow' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200');
+          els.tabK.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold transition ' + (state.queueTab === 'kept' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200');
+
+
           renderDeck();
           renderQueue();
         }
 
-        /* ══════════════ MODALS ══════════════ */
-        function openConnect() {
-          els.inpAppId.value = cfg.appId;
-          els.inpVersion.value = cfg.version;
-          els.inpScopes.value = cfg.scopes;
-          els.connectModal.classList.remove('hidden');
-        }
-        function closeConnect() {
-          els.connectModal.classList.add('hidden');
-        }
-        function readCfgInputs() {
-          cfg.appId = els.inpAppId.value.trim();
-          cfg.version = els.inpVersion.value;
-          cfg.scopes = els.inpScopes.value.trim() || DEFAULT_SCOPES;
-          saveCfg();
-        }
-        function openStatus() {
-          const d = state.diagnostics;
-          els.statusBody.innerHTML = !d
-            ? `<p class="text-slate-400">No connection yet. Click <strong>Connect Facebook</strong> to authorize and pull live data.</p>
-         <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 mt-2 font-mono text-[11px] text-slate-400">
-           App ID: ${esc(cfg.appId || '— not set —')}<br>Version: ${esc(cfg.version)}<br>Scopes: ${esc(cfg.scopes)}<br>Origin: ${esc(location.origin)}
-         </div>`
-            : `
-        <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-1 font-mono text-[11px]">
-          <div><span class="text-slate-500">User:</span> ${esc(state.profile?.name || '—')} <span class="text-slate-600">(${esc(state.profile?.id || '—')})</span></div>
-          <div><span class="text-slate-500">Source:</span> ${esc(d.source || '—')}</div>
-          <div><span class="text-slate-500">Version:</span> ${esc(d.version || cfg.version)}</div>
-          <div><span class="text-slate-500">Synced:</span> ${esc(new Date(d.at).toLocaleString())}</div>
-          ${d.friendTotal != null ? `<div><span class="text-slate-500">Total FB friends:</span> ${esc(d.friendTotal)}</div>` : ''}
-        </div>
-        <div>
-          <p class="font-semibold text-white mb-1.5">Endpoints</p>
-          <div class="space-y-1.5">
-            ${d.edges
-              .map(
-                (e) => `
-              <div class="flex items-start justify-between gap-3 p-2 rounded-lg bg-slate-950 border border-slate-800">
-                <span class="font-mono text-[11px] text-slate-300">${esc(e.label)}</span>
-                ${
-                  e.error
-                    ? `<span class="text-[11px] text-rose-300 text-right max-w-[55%]">${esc(e.error)}</span>`
-                    : `<span class="text-[11px] text-emerald-300">${esc(e.count)} item(s)${e.total != null ? ` / ${esc(e.total)} total` : ''}</span>`
-                }
-              </div>`,
-              )
-              .join('')}
-          </div>
-        </div>
-        ${
-          d.granted?.length || d.declined?.length
-            ? `
-        <div class="grid grid-cols-2 gap-2">
-          <div><p class="font-semibold text-emerald-400 mb-1">Granted</p><div class="flex flex-wrap gap-1">${
-            (d.granted || [])
-              .map(
-                (p) =>
-                  `<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px] font-mono">${esc(p)}</span>`,
-              )
-              .join('') ||
-            '<span class="text-slate-500 text-[11px]">none</span>'
-          }</div></div>
-          <div><p class="font-semibold text-rose-400 mb-1">Declined</p><div class="flex flex-wrap gap-1">${
-            (d.declined || [])
-              .map(
-                (p) =>
-                  `<span class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 text-[10px] font-mono">${esc(p)}</span>`,
-              )
-              .join('') ||
-            '<span class="text-slate-500 text-[11px]">none</span>'
-          }</div></div>
-        </div>`
-            : ''
-        }
-        <p class="text-[11px] text-slate-500 leading-relaxed">Reminder: Graph API exposes no "following" edge and no unfollow write operation. Friend IDs are app-scoped, so direct profile links may not resolve — use the <strong>Search</strong> button on a card.</p>`;
-          els.statusModal.classList.remove('hidden');
-        }
-        function closeStatus() {
-          els.statusModal.classList.add('hidden');
-        }
 
-        /* ══════════════ EVENTS ══════════════ */
-        els.btnConnect.onclick = openConnect;
-        $('btnCloseConnect').onclick = closeConnect;
-        els.btnSettings.onclick = openConnect;
-        els.btnStatus.onclick = openStatus;
-        $('btnCloseStatus').onclick = closeStatus;
-        $('btnRevoke').onclick = revokePermissions;
-        els.btnDisconnect.onclick = disconnect;
-        els.btnSync.onclick = () => syncFromGraph();
-        $('btnDoLogin').onclick = () => {
-          readCfgInputs();
-          connectWithFacebook(false);
-        };
-        $('btnRerequest').onclick = () => {
-          readCfgInputs();
-          connectWithFacebook(true);
-        };
-        $('btnUseToken').onclick = () => {
-          readCfgInputs();
-          useManualToken();
-        };
-        els.fileInput.onchange = (e) => {
-          if (e.target.files?.length) handleExportFiles([...e.target.files]);
-        };
+        /* ---------------------------------------------------------------
+           EVENTS
+        ---------------------------------------------------------------- */
+        els.btnConnect.addEventListener('click', connect);
+        els.btnConnectBig.addEventListener('click', connect);
+        els.btnLogout.addEventListener('click', disconnect);
+        els.btnRefresh.addEventListener('click', () => { toast('Refreshing from Facebook…'); loadAllData(); });
+        els.btnUnfollow.addEventListener('click', () => { const p = pending(); if (p.length) decide(p[0].id, 'remove'); });
+        els.btnKeep.addEventListener('click', () => { const p = pending(); if (p.length) decide(p[0].id, 'keep'); });
+        els.btnUndo.addEventListener('click', undo);
+        els.btnExecute.addEventListener('click', executeQueue);
+        els.pills.forEach((p) => p.addEventListener('click', () => { state.filter = p.dataset.filter; persist(); render(); }));
+        els.tabU.addEventListener('click', () => { state.queueTab = 'unfollow'; render(); });
+        els.tabK.addEventListener('click', () => { state.queueTab = 'kept'; render(); });
 
-        els.ctabs.forEach(
-          (t) =>
-            (t.onclick = () => {
-              const live = t.dataset.ctab === 'live';
-              $('ctabLive').classList.toggle('hidden', !live);
-              $('ctabDyi').classList.toggle('hidden', live);
-              els.ctabs.forEach((x) => {
-                const on = x === t;
-                x.className =
-                  'ctab flex-1 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                  (on
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700');
-              });
-            }),
-        );
 
-        els.btnUnfollow.onclick = () => {
-          const p = pending();
-          if (p.length) commitSwipe(p[0].id, 'unfollow');
-        };
-        els.btnKeep.onclick = () => {
-          const p = pending();
-          if (p.length) commitSwipe(p[0].id, 'keep');
-        };
-        els.btnUndo.onclick = undoSwipe;
-        els.pills.forEach(
-          (p) =>
-            (p.onclick = () => {
-              state.filter = p.dataset.filter;
-              saveState();
-              renderAll();
-            }),
-        );
-        els.tabU.onclick = () => {
-          state.queueTab = 'unfollow';
-          saveState();
-          renderAll();
-        };
-        els.tabK.onclick = () => {
-          state.queueTab = 'kept';
-          saveState();
-          renderAll();
-        };
-
-        $('btnExportCsv').onclick = () => {
-          const items = state.accounts.filter(
-            (a) => state.decisions[a.id] === 'unfollow',
-          );
-          if (!items.length) {
-            showToast('Unfollow queue is empty');
-            return;
-          }
-          const rows = [
-            [
-              'Name',
-              'Profile URL',
-              'Type',
-              'Mutual',
-              '2+ years',
-              'Followed since',
-              'Reason',
-              'Source',
-            ],
-          ];
-          items.forEach((a) =>
-            rows.push([
-              a.name,
-              a.url,
-              a.type,
-              String(a.mutual),
-              String(a.stale),
-              a.followedSince,
-              a.reason,
-              a.source,
-            ]),
-          );
-          const csv = rows
-            .map((r) =>
-              r
-                .map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`)
-                .join(','),
-            )
-            .join('\n');
-          const url = URL.createObjectURL(
-            new Blob([csv], { type: 'text/csv;charset=utf-8;' }),
-          );
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'facebook_unfollow_queue.csv';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          showToast(`Exported ${items.length} accounts`);
-        };
-        $('btnCopyQueue').onclick = async () => {
-          const items = state.accounts.filter(
-            (a) => state.decisions[a.id] === 'unfollow',
-          );
-          if (!items.length) {
-            showToast('Unfollow queue is empty');
-            return;
-          }
-          const text = items.map((a) => `${a.name} — ${a.url}`).join('\n');
-          try {
-            await navigator.clipboard.writeText(text);
-          } catch (e) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-          }
-          showToast('Copied unfollow queue');
-        };
-
-        document.addEventListener('keydown', (e) => {
-          const modalOpen =
-            !els.connectModal.classList.contains('hidden') ||
-            !els.statusModal.classList.contains('hidden');
-          if (modalOpen) {
-            if (e.key === 'Escape') {
-              closeConnect();
-              closeStatus();
-            }
-            return;
-          }
-          if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName))
-            return;
-          if (e.key === 'ArrowLeft') {
-            const p = pending();
-            if (p.length) commitSwipe(p[0].id, 'unfollow');
-          } else if (e.key === 'ArrowRight') {
-            const p = pending();
-            if (p.length) commitSwipe(p[0].id, 'keep');
-          } else if (e.key === 'z' || e.key === 'Z') {
-            undoSwipe();
-          }
+        els.btnExportCsv.addEventListener('click', () => {
+          const list = queued();
+          if (!list.length) return toast('Queue is empty', 'error');
+          const rows = [['Name','FB ID','Profile URL','Type','Action','Status']]
+            .concat(list.map((a) => [a.name, a.fbId, a.url, a.type, a.action, (state.results[a.id] || {}).status || 'pending']));
+          const csv = rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+          const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+          const a = document.createElement('a'); a.href = url; a.download = 'fb_removal_queue.csv';
+          document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          toast('Exported CSV', 'success');
         });
 
-        /* ══════════════ BOOT ══════════════ */
-        loadPersisted();
-        renderAll();
 
-        if (
-          location.protocol !== 'https:' &&
-          !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-        ) {
-          notify({
-            title: 'HTTPS required for Facebook Login',
-            body: `You are on <code>${esc(location.protocol)}//${esc(location.hostname)}</code>. Facebook Login only works on <strong>https://</strong> or <strong>localhost</strong>.`,
-            tone: 'warn',
-            ttl: 0,
-          });
-        }
+        document.addEventListener('keydown', (e) => {
+          if (!state.connected) return;
+          const p = pending();
+          if (e.key === 'ArrowLeft' && p.length) decide(p[0].id, 'remove');
+          else if (e.key === 'ArrowRight' && p.length) decide(p[0].id, 'keep');
+          else if (e.key.toLowerCase() === 'z') undo();
+        });
 
-        // Silent session restore
-        (async function restore() {
-          if (session.token) {
-            try {
-              await syncFromGraph();
-            } catch (e) {}
-            return;
-          }
-          if (!cfg.appId) return;
-          try {
-            const FBsdk = await loadSdk();
-            FBsdk.getLoginStatus((resp) => {
-              if (resp.status === 'connected' && resp.authResponse) {
-                session = {
-                  token: resp.authResponse.accessToken,
-                  userId: resp.authResponse.userID,
-                  source: 'oauth',
-                };
-                saveSession();
-                notify({
-                  title: 'Existing Facebook session found',
-                  body: 'Refreshing your data from the Graph API…',
-                  tone: 'info',
-                  ttl: 3500,
-                });
-                syncFromGraph();
-              }
-            });
-          } catch (e) {
-            /* SDK blocked — user can still use the export path */
-          }
-        })();
+
+        render();
       })();
     </script>
   </body>
